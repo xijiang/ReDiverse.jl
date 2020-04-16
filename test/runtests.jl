@@ -1,5 +1,12 @@
 using Test, ReDiverse
 
+########################################
+println("Compile the C++ codes")
+cd("../src")
+run(`make`)
+run(`make mv`)
+
+########################################
 println("Test tools and data")
 
 @testset "Tools" begin

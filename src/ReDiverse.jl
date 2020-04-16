@@ -13,7 +13,7 @@ following procedure:
 6. Cross-validation strategy
 """
 module ReDiverse
-export myDebug
+export sandbox
 
 include("commonFunc.jl")
 include("raw-genotype-org.jl")

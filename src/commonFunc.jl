@@ -7,8 +7,7 @@ funciton, to create a plink fam file. The file must has the first 3 column as:
 2. chromosome name
 3. base pair position
 
-# Note:
-The three columns *must be tab separated*
+It return a Dict() of [snp::String] -> [chr::String, bp::String]
 
 # Example
     ```juliarepl
@@ -16,7 +15,15 @@ The three columns *must be tab separated*
     ```
 """
 function read_3c_map_file(file::String)
-    println("To be validated")
+    tmap = Dict()
+    snp = chr = bp = ""::String
+    open(file, "r") do io
+        while !eof(io)
+            snp, chr, bp = split(readline(io))[1:3]
+            tmap[snp] = [chr, bp]
+        end
+    end
+    return tmap
 end
 
 ################################################################################
@@ -58,7 +65,31 @@ end
 
 ################################################################################
 """
-    write_to_plink_ped(ID::String, genotype::String)
+    create_map_for_a_final_report_group(infile::String, tmap::Dict, oofile::String)
+---
+Given a `infile` in final report and a SNP map dictionary, `tmap`, which is a super set of SNP
+in the final report, this subroutine write the plink map to `oofile`.
+"""
+function create_map_for_a_final_report_group(infile::String, tmap::Dict, oofile::string)
+    open(oofile, "w") do oo
+        line = "duummy"
+        open(file, "r") do ii
+            while line[1:6] != "[Data]"
+                line = readline(ii)
+            end
+            _ = readline(ii)
+            while !eof(ii)
+                snp = split(readline(ii))[1]
+                chr, bp = tmap[snp]
+                write(oo, chr, ' ', snp, " 0 ", bp, '\n')
+            end
+        end
+    end
+end
+
+################################################################################
+"""
+    merge_to_plink_ped(ID::String, genotype::String)
 
 ---
 
@@ -66,11 +97,27 @@ end
 This is a simple covertion program from Illumina final report to plink bed.
 I simply put the pa, ma ID and sex as `0`.
 No phenotype is provided, hence `-9` for the phenotype column.
-I put a default family name as `famDum`.
+I put a default family name as `dummy`.
 
 # Notes
-Plink map:
-1. 
+## Plink map:
+1. chromosome
+2. snp-name
+3. linkage distance, can be 0
+4. base pari position
+
+## Plink ped:
+1. Family ID
+2. Individual ID
+3. Paternal ID
+4. Maternal ID
+5. Sex (1=male; 2=female; other=unknown)
+6. Phenotype
+7. Then (allele-1 allele-2) x number of loci
+8. `*0, or zero` is for missing
+
+## C++ codes
+I also wrote a C++ program, which uses only a tiny fraction of Julia program.
 """
 function merge_to_plink_bed(dir::String, ref::String, prefix::String)
     println("\nDealing with $dir")

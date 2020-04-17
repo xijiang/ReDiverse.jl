@@ -4,7 +4,7 @@
 This is to manipulate the German genotype data, which were received on Apr. 04, 2020.
 The data consist four platfomrs:
 1. LD:  12 ID, ignored
-2. MD:   5 ID, ignored
+2. MD:   5 ID, ignored, these are actually of platform v3, with a lot missings
 3. V2:  70 ID, takes 73+ seconds to finish, will find a better way later.
 4. V3: 733 ID, took 765s !!! too bad
 
@@ -16,23 +16,17 @@ function orgGermanGT()
     println("Ignoring data in data/genotypes/german/ld\n")
     println("Ignoring data in data/genotypes/german/md\n")
 
-    platform = ["v2/", "v3/"]
-    ofile = ["v2", "v3"]
-    lmap = ["50kv2.map",  "50kv3.map"]
-    
     dir = "data/genotypes/german/"
     mdr = "data/maps/"
-    den = "data/genotypes/plink/german-"
+    den = "data/plink/german-"
 
-    for i in 1:length(platform)
-        gdr = dir * platform[i] # genotype directory
-        prx = den * ofile[i]    # prifix of the plink files
-        ref = mdr * lmap[i]     # map reference
-        @time merge_to_plink_bed(gdr, ref, prx)
-    end
+    println("Dealing with the data with platform 50k v2")
+    @time merge_to_plink_bed(dir*"v2/", mdr*"50kv2.map", den*"v2")
+
+    println("Dealing with the data with platform 50k v3")
+    @time merge_to_plink_bed(dir*"v3/", mdr*"50kv3.map", den*"v3")
 end
 
-#=
 """
     orgDutchGT()
 
@@ -47,16 +41,16 @@ I am doing them with `Julia` procedure.
 5. platform    v3,   44 ID
 """
 function orgDutchGT()
-    # Note I define to add a '/', so that I don't have to use join([a, b], '/')
-    platform = ["10690/", "10993/", "11483/", "50kv3/", "54609/"]
-    ofile = ["10690", "10993", "11483", "v3", "v2"]
     dir = "data/genotypes/dutch/"
-    den = "data/genotypes/ped/dutch-"
-    
-    for i in 1:5
-        wdir = dir * platform[i]
-        ped = den * ofile[i] * ".ped"
-        @time merge_to_plink_bed(wdir, ped)
-    end
+    mdr = "data/maps/"
+    den = "data/plink/dutch-"
+
+    println("Dutch data, platform 50kv2")
+    @time merge_to_plink_bed(dir*"54609/", mdr*"50kv2.map", den*"v2")
+
+    println("Dutch data, platform 50kv3")
+    #= Not passed below
+    println("Dutch data, platform 777k")
+    @time merge_to_plink_bed(dir*"777k/", mdr*"777k.map", den*"777k")
+    =#
 end
-=#

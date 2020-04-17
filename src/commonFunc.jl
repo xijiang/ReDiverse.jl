@@ -41,47 +41,123 @@ only reads ID name, and genotypes into a string.
 """
 function read_a_final_report(file::String)
     id = ""::String
-    genotypes = ""::String
+    gt = ""::String
+    valid = Set(['A', 'C', 'G', 'T'])
     
     open(file, "r") do io
         line = "pattern"
-        while line[1:6] ≠ "[Data]"
+        for i in 1:5
             line = readline(io)
         end
-        _ = readline(io)        # skip header line below '[Data]'
+        n_loci = parse(Int, split(line)[3])
+        allele = fill('0', n_loci * 2)
+        
+        while line[1:3] ≠ "SNP" # the header may have 10 or 11 lines
+            line = readline(io)
+        end
 
-        while !eof(io)
-            line = strip(readline(io))
-            if length(line) > 10 # 0 is enough to avoid an empty line
-                id, a, b = [split(line)[i] for i in [2, 3, 4]]
-                genotypes *= a
-                genotypes *= b
+        for i in 1:n_loci
+            line = readline(io)
+            id, a, b = [split(line)[k] for k in [2, 3, 4]]
+            if a[1] in valid
+                allele[i*2 - 1] = a[1]
+            end
+            if b[1] in valid
+                allele[i*2] = b[1]
             end
         end
+        gt = join(allele)
     end
     
-    return id, genotypes
+    return id, gt
+end
+
+########################################
+"""
+    create_plink_ped(dir::String)
+
+---
+
+Given the `dir` name, this procecore merge all files in this directory into
+`tmp/plink.ped`.  Make **sure** that the only final report files are in this
+directory
+
+# Plink ped format:
+1. Family ID
+2. Individual ID
+3. Paternal ID
+4. Maternal ID
+5. Sex (1=male; 2=female; other=unknown)
+6. Phenotype
+7. Then (allele-1 allele-2) x number of loci
+8. `*0, or zero` is for missing
+"""
+function create_plink_ped(dir::String)
+    println("\nMerging genotypes in $dir to tmp/plink.ped")
+    open("tmp/plink.ped", "w") do ped
+        cnt = 0
+        println("In directory $dir: ")
+        for f in readdir(dir)
+            ID, genotype = read_a_final_report(dir * f)
+            cnt += 1
+            print("\r    Dealing with file $f,  number ", cnt)
+            write(ped, "dummy ", ID, " 0 0 0 -9 ")
+            write(ped, join(split(genotype, ""), " "), '\n')
+        end
+    end
+    println("\nMerged genotypes written to tmp/plink.ped\n")
+end
+
+########################################
+"""
+    ref_map_dict(fmap::String)
+
+---
+
+This create a dictionary of SNP -> [chr, bp] and return it
+
+# Notes
+1. chromosome
+2. SNP-name
+3. linkage distance, can be 0
+4. base pari position
+"""
+function ref_map_dict(fmap)     # fmap: the physical map
+    println("Creating a SNP dictionary with $fmap")
+    snpdic = Dict()
+    open(fmap, "r") do io
+        while !eof(io)
+            snp, chr, bp = split(readline(io))
+            snpdic[snp] = [chr, bp]
+        end
+    end
+
+    return snpdic
 end
 
 ################################################################################
 """
-    create_map_for_a_final_report_group(infile::String, tmap::Dict, oofile::String)
+    create_plink_map(dir::String, tmap::Dict)
+
 ---
+
 Given a `infile` in final report and a SNP map dictionary, `tmap`, which is a super set of SNP
 in the final report, this subroutine write the plink map to `oofile`.
 """
-function create_map_for_a_final_report_group(infile::String, tmap::Dict, oofile::string)
-    open(oofile, "w") do oo
+function create_plink_map(dir::String, tmap::Dict)
+    println("Create tmp/plink.map with the fist file in $dir")
+
+    open("tmp/plink.map", "w") do foo
         line = "duummy"
-        open(file, "r") do ii
+        open(dir*readdir(dir)[1], "r") do io
             while line[1:6] != "[Data]"
-                line = readline(ii)
+                line = readline(io)
             end
-            _ = readline(ii)
-            while !eof(ii)
-                snp = split(readline(ii))[1]
+            _ = readline(io)
+            while !eof(io)
+                snp = split(readline(io))[1]
                 chr, bp = tmap[snp]
-                write(oo, chr, ' ', snp, " 0 ", bp, '\n')
+                write(foo, chr, ' ', snp, " 0 ", bp, '\n')
             end
         end
     end
@@ -89,7 +165,7 @@ end
 
 ################################################################################
 """
-    merge_to_plink_ped(ID::String, genotype::String)
+    merge_to_plink_ped(dir::String, ref::String, name::String)
 
 ---
 
@@ -99,69 +175,30 @@ I simply put the pa, ma ID and sex as `0`.
 No phenotype is provided, hence `-9` for the phenotype column.
 I put a default family name as `dummy`.
 
-# Notes
-## Plink map:
-1. chromosome
-2. snp-name
-3. linkage distance, can be 0
-4. base pari position
+# Arguments
+- dir: where holds the final report files (and only)
+- ref: the reference physical map file name
+- name: results will be put to data/plink/name.*
 
-## Plink ped:
-1. Family ID
-2. Individual ID
-3. Paternal ID
-4. Maternal ID
-5. Sex (1=male; 2=female; other=unknown)
-6. Phenotype
-7. Then (allele-1 allele-2) x number of loci
-8. `*0, or zero` is for missing
+# C++ codes
+I also wrote a C++ program, fr2ped.cpp, which uses only a tiny fraction of time
+used by this Julia program.
 
-## C++ codes
-I also wrote a C++ program, which uses only a tiny fraction of Julia program.
+# Note
+If all alleles are missing on one locus, `plink` will report a triallele warning.
 """
-function merge_to_plink_bed(dir::String, ref::String, prefix::String)
-    println("\nDealing with $dir")
+function merge_to_plink_bed(dir::String, ref::String, name::String)
     isdir("tmp") || mkdir("tmp")
 
-    open("tmp/tmp.ped", "w") do ped
-        cnt = 0
-        for f in readdir(dir)
-            ID, genotype = read_a_final_report(dir * f)
-            cnt += 1
-            print("\rDealing with ID $dir$f,  number ", cnt)
-            write(ped, join(["famDum", ID, "\t0\t0\t0\t-9"], '\t'))
-            
-            for allele in genotype
-                write(ped, '\t', allele)
-            end
-            write(ped, '\n')
-        end
-    end
-    println("\nMerged data written to tmp.ped")
+    create_plink_ped(dir)
 
-    println("\nRead the reference physical map")
-    psnp = Dict()
-    open(ref, "r") do io
-        while !eof(io)
-            snp, chr, bp = split(readline(io))
-            psnp[snp] = [chr, bp]
-        end
-    end
+    snpdic = ref_map_dict(ref)
+
+    create_plink_map(dir, snpdic) # read the first file to create tmp/plink.map
+
+    println()
     
-    println("Create a map from referernce in the order of the final report")
-    foo = open("tmp/tmp.map", "w")
-    open(dir*readdir(dir)[1], "r") do io
-        line = "duuuummy"
-        while line[1:6] ≠ "[Data]"
-            line = readline(io)
-        end
-        _ = readline(io)
-        while !eof(io)
-            line = strip(readline(io))
-            snp = split(line)[1]
-            chr, bp = psnp[snp]
-            write(foo, join([chr, snp, 0, bp], '\t'), '\n')
-        end
-    end
-    close(foo)
+    run(`bin/plink --cow --recode --make-bed --ped tmp/plink.ped --map tmp/plink.map --out $name`)
+
+    println()                   # to show time used more clearly
 end

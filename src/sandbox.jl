@@ -1,8 +1,8 @@
 function sandbox()
     dir = "data/genotypes/dutch/"
-    mdr = "data/maps/"
     den = "data/plink/dutch-"
+    mdr = "data/maps/dutch-ld/"
 
-    println("Dutch data, platform 50kv2")
-    @time merge_to_plink_bed(dir*"54609/", mdr*"50kv2.map", "tmp/v2")
+    println("Datch data, platform 11483")
+    @time merge_to_plink_bed(dir*"11483/", mdr*"11483.map", den*"11483")
 end

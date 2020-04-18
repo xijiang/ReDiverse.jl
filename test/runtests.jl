@@ -25,7 +25,7 @@ end
     @test length(readdir("../data/genotypes/dutch/50kv3/")) == 44
     @test length(readdir("../data/genotypes/dutch/54609/")) == 343
     @test length(readdir("../data/genotypes/dutch/777k/")) == 10
-    @test length(readdir("../data/genotypes/norge/plink/")) == 9
+    @test length(readdir("../data/genotypes/norge/")) == 9
 end
 
 @testset "Maps" begin

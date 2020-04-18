@@ -1,11 +1,18 @@
 """
     pkg ReDiverse
+---
 
 # General description
-This is a package to organize and analysis ReDiverse data. It follows the
-following procedure:
+A package to organize and analysis ReDiverse data. Below are the `ToDo`s
 
-1. [x] Genotype collection, and convert to `plink` format.
+# Urgent
+- `Some Dutch maps`
+- `Convert Dutch genotypes of several platforms` with above maps
+- `Considering unify maps`
+- `Do quality check`
+- `Start imputation asap`
+# General roadmap
+1. Genotype collection, and convert to `plink` format.
 2. [x] Genotype data clean
 3. Determine of SNP chip platforms, and final SNP set.
 4. Imputation
@@ -16,10 +23,11 @@ module ReDiverse
 export sandbox
 
 include("commonFunc.jl")
-include("raw-genotype-org.jl")
-include("prepare-maps.jl")
 include("prepare-tools.jl")
-include("sandbox.jl")
+include("prepare-maps.jl")
+include("raw-genotype-org.jl")
 
 include("work-flow.jl")
+
+include("sandbox.jl")           # the only exported funciton
 end # module

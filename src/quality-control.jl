@@ -21,10 +21,12 @@ function plot_miss(batch::String)
             push!(y_i, fmiss)
         end
     end
+    nid = length(y_i)
     p1 = Plots.histogram(y_i,
-                         xlabel = "Loci missing frequencies per ID",
+                         xlabel = "Loci missing frequencies per ID (n=$nid)",
                          ylabel = "Number of ID of x_frequency range",
-                         label = batch*": plink imiss histogram")
+                         label = batch*": plink imiss histogram" 
+                         )
 
     y_l = Float64[]
     open(lmiss, "r") do io
@@ -34,13 +36,14 @@ function plot_miss(batch::String)
             push!(y_l, lmiss)
         end
     end
+    nlc = length(y_l)
     p2 = Plots.histogram(y_l,
                          xlabel = "Loci missing frequencies per locus",
                          ylabel = "Number of loci of x_frequency range",
                          label = batch*": plink lmiss histogram")
-    plot(p1, p2, size=(800, 300), dpi=300)
+    Plots.plot(p1, p2, size=(800, 300), dpi=300)
 
-    savefig("$dir/$batch.png")
+    Plots.savefig("$dir/$batch.png")
 end
 
 """
@@ -72,7 +75,7 @@ function plot_freq(batch::String)
                     xlabel = "MAF",
                     ylabel = "Number of loci ovserved on the freq.",
                     label = "$batch: MAF histogram")
-    savefig("$dir/$batch-maf.png")
+    Plots.savefig("$dir/$batch-maf.png")
 end
 
 """

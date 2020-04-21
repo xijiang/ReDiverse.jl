@@ -28,3 +28,4 @@ data
 bin/
 plink-ng/
 tmp/
+notebooks/pdf/

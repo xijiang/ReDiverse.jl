@@ -16,4 +16,10 @@ function general_work_flow()
     if false
         quality_control()
     end
+
+    # Create subset for imputation
+    if false
+        check_maps()
+        check_maps_further()
+    end
 end

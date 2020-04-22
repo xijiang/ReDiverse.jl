@@ -203,12 +203,31 @@ function merge_to_plink_bed(dir::String, ref::String, name::String)
     println()                   # to show time used more clearly
 end
 
+"""
+    get_snp_set(file::String)
+---
+Read the SNP names in the map file, and return the SNP set.
+"""
+function get_snp_set(file::String, autosome_only::Bool = false)
+    SNP = String[]
+    open(file, "r") do io
+        for line in eachline(io)
+            snp, chr = [split(line)[i] for i in 1:2]
+            if autosome_only
+                is_autosome(String(chr)) && push!(SNP, String(snp))
+            else
+                push!(SNP, String(snp))
+            end
+        end
+    end
+    return Set(SNP)
+end
+
 ################################################################################
+# Print message functions
 """
     print_header(msg::String)
-
 ---
-
 Given a message, this function print 4 lines
 1. an empty line
 2. repeat = 80 times
@@ -220,4 +239,41 @@ function print_header(msg::String)
     println(repeat('=', 80))
     println(msg)
     println(repeat('^', length(msg)))
+end
+
+"""
+    print_sst(msg::String)
+---
+If there are several parts in a function, this function print a title of bold
+light blue.
+"""
+function print_sst(msg::String)
+    println()
+    printstyled(msg, '\n', bold=true, color=:light_blue)
+    printstyled(repeat('=', length(msg)), '\n', color=:light_blue)
+end
+
+"""
+    print_msg(msg::String)
+
+---
+
+This function print the msg as soft warning, i.e., the text color is of :light_magenta
+"""
+function print_msg(msg::String)
+    println()
+    printstyled(msg; color = :light_magenta)
+    println("\n")
+end
+
+"""
+    print_desc(msg::String)
+
+---
+This is to print some descriptions of results that are going to be showed below the
+description.
+This function print the message, a newline, and in color :yellow.
+"""
+function print_desc(msg::String)
+    printstyled(msg, '\n'; color=:yellow)
 end

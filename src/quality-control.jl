@@ -104,6 +104,8 @@ function quality_control()
                "norge-v2"]
     src = "data/plink"
     tgt = "data/qc"
+    println("Test if all the bed files are ready")
+    are_files_ready(src, batches, "bed")
     isdir(tgt) || mkdir(tgt)
 
     println("The plink logs can be found in data/qc")

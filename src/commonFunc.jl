@@ -1,6 +1,7 @@
 ################################################################################
 """
     read_3c_map_file(file::String)
+---
 This is to read a 3-column map files, to use with merge_final_report_2_plink_fam(lmap, ID)
 funciton, to create a plink fam file. The file must has the first 3 column as:
 1. SNP name
@@ -29,7 +30,7 @@ end
 ################################################################################
 """
     read_a_final_report()
-
+---
 Given a file name of genotypes in Illumina final report format, this funciton
 only reads ID name, and genotypes into a string.
 
@@ -75,9 +76,7 @@ end
 ########################################
 """
     create_plink_ped(dir::String)
-
 ---
-
 Given the `dir` name, this procecore merge all files in this directory into
 `tmp/plink.ped`.  Make **sure** that the only final report files are in this
 directory
@@ -111,9 +110,7 @@ end
 ########################################
 """
     ref_map_dict(fmap::String)
-
 ---
-
 This create a dictionary of SNP -> [chr, bp] and return it
 
 # Notes
@@ -138,9 +135,7 @@ end
 ################################################################################
 """
     create_plink_map(dir::String, tmap::Dict)
-
 ---
-
 Given a `infile` in final report and a SNP map dictionary, `tmap`, which is a super set of SNP
 in the final report, this subroutine write the plink map to `oofile`.
 """
@@ -166,9 +161,7 @@ end
 ################################################################################
 """
     merge_to_plink_ped(dir::String, ref::String, name::String)
-
 ---
-
 # Introduction
 This is a simple covertion program from Illumina final report to plink bed.
 I simply put the pa, ma ID and sex as `0`.
@@ -198,7 +191,14 @@ function merge_to_plink_bed(dir::String, ref::String, name::String)
 
     println()
 
-    _ = read(`bin/plink --cow --recode --make-bed --ped tmp/plink.ped --map tmp/plink.map --out $name`, String);
+    _ = read(`bin/plink
+                  --cow
+                  --recode
+                  --make-bed
+                  --ped tmp/plink.ped
+                  --map tmp/plink.map
+                  --out $name`,
+             String);
 
     println()                   # to show time used more clearly
 end
@@ -276,4 +276,94 @@ This function print the message, a newline, and in color :yellow.
 """
 function print_desc(msg::String)
     printstyled(msg, '\n'; color=:yellow)
+end
+
+"""
+    create_map_dict(fsnp::String, fmap::String)
+---
+Given:
+- fsnp: the file name of a list of SNP
+- fmap: 3-column (snp chr bp) map file name
+
+This function return a dictionary of {(snp::String, [chr::String, bp::String])}
+"""
+function create_map_dict(fsnp::String, fmap::String)
+    ssnp = Set()
+    open(fsnp, "r") do io
+        vsnp = String[]
+        for snp in eachline(io)
+            push!(vsnp, snp)
+        end
+        ssnp = Set(vsnp)        # will be gone after this block
+    end
+
+    mdic = Dict()
+    open(fmap, "r") do io
+        for line in eachline(io)
+            snp, chr, bp = [split(line)[i] for i in 1:3]
+            if snp in ssnp
+                mdic[String(snp)] = [String(chr), String(bp)]
+            end
+        end
+    end
+    return mdic
+end
+
+"""
+    update_bed(sbed::String, mmap::String, ref::Dict)
+---
+# Description
+Given:
+1. sbed: the source plink file name, without {.bed,.bim...}
+2. mmap: its snp map file (in my format (snp, chr, bp))
+3. ref:  the super set of SNP, and map
+
+This function:
+1. extract subset `stem` according to `ref`
+2. update the map
+3. put the final results into `data/plkmax`
+"""
+function update_bed(sbed::String, mmap::String, ref::Dict)
+    open("tmp/tmp.snp", "w") do foo
+        open(mmap, "r") do io
+            for line in eachline(io)
+                snp = split(line)[1]
+                if haskey(ref, snp)
+                    write(foo, snp, '\n')
+                end
+            end
+        end
+    end                         # this is ugly, but safer
+
+    println("Created SNP final list and its map")
+    _ = read(`bin/plink
+                  --cow
+                  --bfile $sbed
+                  --extract tmp/tmp.snp
+                  --recode
+                  --out tmp/tmp`,
+             String)
+    println("Update the map according to Illumina 50k v3")
+    open("tmp/new.map", "w") do foo
+        open("tmp/tmp.map", "r") do io
+            for line in eachline(io)
+                ochr, snp, obp = [split(line)[i] for i in [1, 2, 4]]
+                if haskey(ref, snp)
+                    nchr, nbp = ref[snp]
+                    write(foo, nchr, '\t', snp, "\t0\t", nbp, '\n')
+                end
+            end
+        end
+    end
+    
+    tdir="data/plkmax"          # the target dir
+    tbed=basename(sbed)
+    _ = read(`bin/plink
+                  --cow
+                  --map tmp/new.map
+                  --ped tmp/tmp.ped
+                  --make-bed
+                  --out $tdir/$tbed
+                  `,
+             String)
 end

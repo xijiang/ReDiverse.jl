@@ -115,16 +115,32 @@ function quality_control()
         print_header("Dealing with data batch: $batch")
         
         # Histogram missing data
-        _ = read(`bin/plink --cow --bfile $src/$batch --missing --out $tgt/$batch`, String);
+        _ = read(`bin/plink
+                      --cow
+                      --bfile $src/$batch
+                      --missing
+                      --out $tgt/$batch`,
+                 String);
         plot_miss(batch)
         
         # Histogram MAF
         println(repeat('-', 60))
-        _ = read(`bin/plink --cow --bfile $src/$batch --nonfounders --freq --out $tgt/$batch`, String);
+        _ = read(`bin/plink
+                      --cow
+                      --bfile $src/$batch
+                      --nonfounders
+                      --freq
+                      --out $tgt/$batch`,
+                 String);
         plot_freq(batch)
 
         # HWE
         println(repeat('-', 60))
-        _ = read(`bin/plink --cow --bfile $src/$batch --hardy --out $tgt/$batch`, String);
+        _ = read(`bin/plink
+                      --cow
+                      --bfile $src/$batch
+                      --hardy
+                      --out $tgt/$batch`,
+                 String);
     end
 end

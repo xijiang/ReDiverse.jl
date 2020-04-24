@@ -130,31 +130,14 @@ function plink_subset_max()
     pdir = "data/plink"         # where the collected genotypes are
     tdir = "data/plkmax" # holds plink files filtered and map updated.
     isdir(tdir) || mkdir(tdir)
-    rm("tmp", recursive=true, force=true)
+    rm("tmp", recursive=true, force=true) # make the 
     mkdir("tmp")
-    ##################################################
-    print_sst("Read the target SNP")
-    ssnp = Set{String}
-    open("data/maps/target.snp", "r") do io
-        vsnp = String[]
-        for snp in eachline(io)
-            push!(vsnp, snp)
-        end
-        ssnp = Set(vsnp)
-    end
-    println("Done")
+
     ##################################################
     print_sst("Create a target map dictionary")
-    mtgt = Dict()
-    open("data/maps/50kv3.map", "r") do io
-        for line in eachline(io)
-            snp, chr, bp = [split(line)[i] for i in 1:3]
-            if snp in ssnp
-                mtgt[String(snp)] = [parse(Int, chr), parse(Int, bp)]
-            end
-        end
-    end
+    mtgt = create_map_dict("data/maps/target.snp", "data/maps/50kv3.map")
     println("Done")
+
     ##################################################
     print_sst("Dealing with Dutch data")
     pre = "dutch-"
@@ -165,18 +148,28 @@ function plink_subset_max()
                  ("v3",    "50kv3"),
                  ("777k",  "777k")])
     for (g, m) in pair
-        println("Deaing with platform $g, with map $m")
-        open("tmp/tmp.map", "w") do io
-            open("$mdir/$m.map", "r") do ix
-                for line in eachline(ix)
-                    snp = split(line)[1]
-                    if haskey(mtgt, snp)
-                        write(io, snp, ' ', join(mtgt[snp], ' '), '\n')
-                    end
-                end
-            end
-        end
-        
+        update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
     end
-    
+    println("Done")
+
+    ##################################################
+    print_sst("Dealing with German data")
+    pre = "german-"
+    pair = Dict([("v2", "50kv2"),
+                 ("v3", "50kv3")])
+    for (g, m) in pair
+        update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
+    end
+    println("Done")
+
+    ##################################################
+    print_sst("Dealing with Norge data")
+    pre = "norge-"
+    pair = Dict([("v1",   "50kv1"),
+                 ("v2",   "50kv2"),
+                 ("777k", "777k")])
+    for (g, m) in pair
+        update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
+    end
+    println("Done")
 end

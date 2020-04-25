@@ -23,21 +23,7 @@ A package to organize and analysis ReDiverse data. Below are the `ToDo`s
 
 """
 module ReDiverse
-
-using Plots, LaTeXStrings, GR, Test, Printf
-# using GR; GR.inline("pdf") or GR.inline("png")
-# To avoid Error/Warning messages like:
-# connect: Connection refused
-# GKS: can't connect to GKS socket application
-# 
-# GKS: Open failed in routine OPEN_WS
-# GKS: GKS not in proper state. GKS must be either in the state WSOP or WSAC in routine ACTIVATE_WS
-# GKS: character ignored due to unicode error
-# GKS: character ignored due to unicode error
-# ......
-# See: https://github.com/jheinen/GR.jl/issues/172
-GR.inline("png")
-#Plots.scalefontsizes(1)
+using Plots, LaTeXStrings, Test, Printf
 
 export sandbox
 

@@ -223,24 +223,6 @@ function get_snp_set(file::String, autosome_only::Bool = false)
     return Set(SNP)
 end
 
-################################################################################
-# Print message functions
-"""
-    print_header(msg::String)
----
-Given a message, this function print 4 lines
-1. an empty line
-2. repeat = 80 times
-3. the message
-4. emphsis of the letters
-"""
-function print_header(msg::String)
-    println()
-    println(repeat('=', 80))
-    println(msg)
-    println(repeat('^', length(msg)))
-end
-
 """
     print_sst(msg::String)
 ---

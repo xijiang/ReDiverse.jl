@@ -24,6 +24,8 @@ A package to organize and analysis ReDiverse data. Below are the `ToDo`s
 """
 module ReDiverse
 using Plots, LaTeXStrings, Test, Printf
+plink  = "bin/plink"
+beagle = "bin/beagle.jar"
 
 export sandbox
 
@@ -31,8 +33,10 @@ include("commonFunc.jl")
 include("prepare-tools.jl")
 include("prepare-maps.jl")
 include("raw-genotype-org.jl")
-include("quality-control.jl")   # done Apr. 21 2020
+include("quality-control.jl")
 include("extract-loci.jl")
+include("merge-n-filter-gt.jl")
+include("plink-cmd.jl")
 include("test-funcs.jl")
 
 include("work-flow.jl")

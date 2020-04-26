@@ -136,7 +136,7 @@ function plink_subset_max()
     ##################################################
     print_sst("Create a target map dictionary")
     mtgt = create_map_dict("data/maps/target.snp", "data/maps/50kv3.map")
-    println("Done")
+    print_done()
 
     ##################################################
     print_sst("Dealing with Dutch data")
@@ -150,7 +150,7 @@ function plink_subset_max()
     for (g, m) in pair
         update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
     end
-    println("Done")
+    print_done()
 
     ##################################################
     print_sst("Dealing with German data")
@@ -160,7 +160,7 @@ function plink_subset_max()
     for (g, m) in pair
         update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
     end
-    println("Done")
+    print_done()
 
     ##################################################
     print_sst("Dealing with Norge data")
@@ -171,5 +171,5 @@ function plink_subset_max()
     for (g, m) in pair
         update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
     end
-    println("Done")
+    print_done()
 end

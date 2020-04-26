@@ -22,6 +22,7 @@ function general_work_flow()
         check_maps()
         check_maps_further()
         plink_subset_max()
-        ReDiverse.quality_control("data/plkmax", "notebooks/qc2")
+        quality_control("data/plkmax", "notebooks/qc2")
+        merge_into_3_sets()        
     end
 end

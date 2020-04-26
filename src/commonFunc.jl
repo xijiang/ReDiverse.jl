@@ -191,13 +191,12 @@ function merge_to_plink_bed(dir::String, ref::String, name::String)
 
     println()
 
-    _ = read(`bin/plink
-                  --cow
-                  --recode
-                  --make-bed
-                  --ped tmp/plink.ped
-                  --map tmp/plink.map
-                  --out $name`,
+    _ = read(`bin/plink --cow
+                        --recode
+                        --make-bed
+                        --ped tmp/plink.ped
+                        --map tmp/plink.map
+                        --out $name`,
              String);
 
     println()                   # to show time used more clearly
@@ -224,40 +223,58 @@ function get_snp_set(file::String, autosome_only::Bool = false)
 end
 
 """
-    print_sst(msg::String)
+    print_sst(msg::AbstractString)
 ---
 If there are several parts in a function, this function print a title of bold
 light blue.
 """
-function print_sst(msg::String)
+function print_sst(msg::AbstractString)
     println()
     printstyled(msg, '\n', bold=true, color=:light_blue)
     printstyled(repeat('=', length(msg)), '\n', color=:light_blue)
 end
 
 """
-    print_msg(msg::String)
+    print_msg(msg::AbstractString)
 
 ---
 
 This function print the msg as soft warning, i.e., the text color is of :light_magenta
 """
-function print_msg(msg::String)
+function print_msg(msg::AbstractString)
     println()
     printstyled(msg; color = :light_magenta)
     println("\n")
 end
 
 """
-    print_desc(msg::String)
+    print_desc(msg::AbstractString)
 
 ---
 This is to print some descriptions of results that are going to be showed below the
 description.
 This function print the message, a newline, and in color :yellow.
 """
-function print_desc(msg::String)
+function print_desc(msg::AbstractString)
     printstyled(msg, '\n'; color=:yellow)
+end
+
+"""
+    print_done()
+---
+Print message `Done` in light_green.
+"""
+function print_done()
+    printstyled("\n...Done\n"; color=:light_green)
+end
+
+"""
+    print_item(item::AbstractString)
+---
+Print an item under print_sst(msg).
+"""
+function print_item(item::AbstractString)
+    printstyled("\n$item\n"; color=74)
 end
 
 """
@@ -318,12 +335,11 @@ function update_bed(sbed::String, mmap::String, ref::Dict)
     end                         # this is ugly, but safer
 
     println("Created SNP final list and its map")
-    _ = read(`bin/plink
-                  --cow
-                  --bfile $sbed
-                  --extract tmp/tmp.snp
-                  --recode
-                  --out tmp/tmp`,
+    _ = read(`bin/plink --cow
+                        --bfile $sbed
+                        --extract tmp/tmp.snp
+                        --recode
+                        --out tmp/tmp`,
              String)
     println("Update the map according to Illumina 50k v3")
     open("tmp/new.map", "w") do foo
@@ -340,12 +356,28 @@ function update_bed(sbed::String, mmap::String, ref::Dict)
     
     tdir="data/plkmax"          # the target dir
     tbed=basename(sbed)
-    _ = read(`bin/plink
-                  --cow
-                  --map tmp/new.map
-                  --ped tmp/tmp.ped
-                  --make-bed
-                  --out $tdir/$tbed
-                  `,
+    _ = read(`bin/plink --cow
+                        --map tmp/new.map
+                        --ped tmp/tmp.ped
+                        --make-bed
+                        --out $tdir/$tbed`,
              String)
 end
+
+#=
+"""
+    reverse_complement(seq::String)
+---
+Return the reverse and complement of sequence `seq`. It is supposed `seq` are all of upper case.
+The dictionary is: "ACGT[]/NY" -> "TGCA][/NY". Otherwise, the character is not translated.
+"""
+function reverse_complement(seq::AbstractString)
+    comp = Dict()
+    str = "ACGT[]/NYRKSWMTGCA][/NYRKSWM"
+    n = Int(length(str)/2)
+    for i in 1:n
+        comp[str[i]] = str[i+n]
+    end
+    return reverse(map(x -> comp[x], seq))
+end
+=#

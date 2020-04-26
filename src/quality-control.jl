@@ -121,7 +121,7 @@ function quality_control(sdir::String, dpng::String)
     mkdir("tmp")
     println("The plink logs can be found in data/qc")
     println("Only warnings and errors are shown in Julia REPL")
-    println("Done")
+    print_done()
 
     #curTime = Dates.format(Dates.now(), "yyyy-mm-dd--HH:MM:SS")
     for batch in batches

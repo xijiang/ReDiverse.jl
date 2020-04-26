@@ -1,3 +1,3 @@
 function sandbox()
-    println("Put some codes here")
+    println(beagle)
 end

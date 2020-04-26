@@ -3,9 +3,7 @@
 
 """
     orgGermanGT()
-
 ---
-
 This is to manipulate the German genotype data, which were received on Apr. 04, 2020.
 The data consist four platfomrs:
 1. LD:  12 ID, ignored
@@ -34,9 +32,7 @@ end
 
 """
     orgDutchGT()
-
 ---
-
 This is to manipulae the Dutch data, which were received much earlier.
 I am doing them with `Julia` procedure.
 
@@ -75,9 +71,7 @@ end
 
 """
     orgNorgeGT()
-
 ---
-
 This is to mange Norwegian genotype data. Since the data were already in plink format, I just make
 some soft links to `data/plink`
 """

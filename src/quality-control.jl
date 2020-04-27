@@ -127,16 +127,21 @@ function quality_control(sdir::String, dpng::String)
     for batch in batches
         print_sst("Dealing with data batch: $batch")
         
-        println("Histogram missing data")
+        print_item("Histogram missing data")
+        miss_allele_stats("$sdir/$batch", "tmp/$batch")
+        #=
         _ = read(`bin/plink
                       --cow
                       --bfile $sdir/$batch
                       --missing
                       --out tmp/$batch`,
                  String);
+        =#
         plot_miss(batch, dpng)
         
-        println("Histogram MAF")
+        print_item("Histogram MAF")
+        allele_maf_stats("$sdir/$batch", "tmp/$batch")
+        #=
         _ = read(`bin/plink
                       --cow
                       --bfile $sdir/$batch
@@ -144,14 +149,18 @@ function quality_control(sdir::String, dpng::String)
                       --freq
                       --out tmp/$batch`,
                  String);
+        =#
         plot_freq(batch, dpng)
 
         println("HWE test")
+        hwe_stats("$sdir/$batch", "tmp/$batch")
+        #=
         _ = read(`bin/plink
                       --cow
                       --bfile $sdir/$batch
                       --hardy
                       --out tmp/$batch`,
                  String);
+        =#
     end
 end

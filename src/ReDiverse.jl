@@ -37,6 +37,7 @@ include("quality-control.jl")
 include("extract-loci.jl")
 include("merge-n-filter-gt.jl")
 include("plink-cmd.jl")
+include("print-styles.jl")
 include("test-funcs.jl")
 
 include("work-flow.jl")

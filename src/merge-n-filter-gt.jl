@@ -12,6 +12,7 @@ function merge_into_3_sets()
             end
         end
     end
+    #=
     function call_plink_merge(dto, country)
         _ = read(`plink --cow
                         --merge-list tmp/list
@@ -19,6 +20,7 @@ function merge_into_3_sets()
                         --out $dto/$country`,
                  String)
     end
+    =#
     
     fra = "data/plkmax"         # from dir
     dto = "data/3-sets"         # to dir
@@ -41,14 +43,16 @@ function merge_into_3_sets()
              "dutch-v2",
              "dutch-v3"]
     create_merge_list(fra, mlist)
-    call_plink_merge(dto, "dutch")
+    plink_merge("tmp/list", "$dto/dutch")
+    # call_plink_merge(dto, "dutch")
     print_done()
 
     print_sst("Merge German data")
     mlist = ["german-v2",
              "german-v3"]
     create_merge_list(fra, mlist)
-    call_plink_merge(dto, "german")
+    plink_merge("tmp/list", "$dto/german")
+    # call_plink_merge(dto, "german")
     print_done()
 
     print_sst("Merge Norge data")
@@ -56,7 +60,8 @@ function merge_into_3_sets()
              "norge-v1",
              "norge-v2"]
     create_merge_list(fra, mlist)
-    call_plink_merge(dto, "norge")
+    plink_merge("tmp/list", "$dto/norge")
+    # call_plink_merge(dto, "norge")
     print_done()
 end
 
@@ -105,7 +110,6 @@ function check_repeated_snp_list()
             end
         end
     end
-    =#
 
     print_sst("Compare genotypes")
     sdir = "data/3-sets"
@@ -137,5 +141,6 @@ function check_repeated_snp_list()
             #for x in dgtp[a]
         end
     end
+    =#
     
 end

@@ -318,6 +318,41 @@ function update_bed(sbed::String, mmap::String, ref::Dict)
     =#
 end
 
+"""
+    snp_gt_dict(vcf::AbstractString, snp::Set)
+---
+Given the `vcf` file name and a `snp` name set, this function create a dic
+of Dict{AbstractString, Vector{Int}}.
+"""
+function snp_gt_dict(vcf::AbstractString, snp::Set)
+    function myparse(tstr::AbstractString)
+        t = -1
+        if tstr[1] ≠ '.'
+            t  = parse(Int, tstr[1])
+            t += parse(Int, tstr[3])
+        end
+        return t
+    end
+    
+    dic = Dict()
+    open(vcf, "r") do io
+        # skip header
+        line = "##"
+        while(line[2] == '#')
+            line = readline(io)
+        end
+        while !eof(io)
+            line = split(readline(io))
+            if line[3] in snp
+                gt = Vector{Int}
+                gt = map(x->myparse(x), line[10:length(line)])
+                dic[line[3]] = gt
+            end
+        end
+    end
+    return dic
+end
+
 #=
 """
     reverse_complement(seq::String)

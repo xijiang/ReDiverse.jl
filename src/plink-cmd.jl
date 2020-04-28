@@ -107,3 +107,33 @@ function plink_merge(list::AbstractString,
                      --out $out`,
              String)
 end
+
+"""
+    plink_2_vcf(src::AbstractString, out::AbstractString, species::AbstractString = "cow")
+---
+Convert plink bed files to out in vcf format
+"""
+function plink_2_vcf(src::AbstractString,
+                     out::AbstractString,
+                     species::AbstractString = "cow")
+    _ = read(`$plink --$species
+                     --bfile $src
+                     --recode vcf-iid
+                     --out $out`,
+             String)
+end
+
+"""
+    vcf_2_plink(src::AbstractString, out::AbstractString = "plink", species::AbstractString = "cow")
+---
+Convert a VCF file to plink.{bed,bim,fam}
+"""
+function vcf_2_plink(src::AbstractString,
+                     out::AbstractString = "plink",
+                     species::AbstractString = "cow")
+    _ = read(`$plink --$species
+                     --vcf $src
+                     --const-fid
+                     --out $out`,
+             String)
+end

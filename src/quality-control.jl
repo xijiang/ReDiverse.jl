@@ -164,3 +164,30 @@ function quality_control(sdir::String, dpng::String)
         =#
     end
 end
+
+"""
+    qc_3_sets()
+---
+Quality control of the 3 country sets. Note there are a few broken links
+between the vcf.gz files here, and 3-set/files. It is fast forward here.
+"""
+function qc_3_sets()
+    tdir = "notebooks/qc3"
+    isdir(tdir) || mkdir(tdir)
+    
+    for country in ["dutch", "german", "norge"]
+        print_sst(country)
+        
+        print_item("Histogram missing data")
+        vcf_2_plink("tmp/$country.vcf.gz", "tmp/$country")
+        miss_allele_stats("tmp/$country", "tmp/$country")
+        plot_miss(country, tdir)
+
+        print_item("Histogram MAF")
+        allele_maf_stats("tmp/$country", "tmp/$country")
+        plot_freq(country, tdir)
+
+        println("HWE test")
+        hwe_stats("tmp/$country", "tmp/$country")
+    end
+end

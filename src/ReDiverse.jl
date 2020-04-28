@@ -6,17 +6,12 @@
 A package to organize and analysis ReDiverse data. Below are the `ToDo`s
 
 # Urgent
-- `Considering unify maps`
 - `Start imputation asap`
-## Done
-- [x] Some Dutch maps
-- [x] Convert Dutch genotypes of several platforms with above maps
-- [x] Do quality check
 
 # General roadmap
 1. Genotype collection, and convert to `plink` format.
 2. [x] Genotype data clean
-3. Determine of SNP chip platforms, and final SNP set.
+3. [x] Determine of SNP chip platforms, and final SNP set.
 4. Imputation
 5. GBLUP
 6. Cross-validation strategy

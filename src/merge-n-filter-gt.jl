@@ -72,75 +72,58 @@ This function check the SNP in the 3 country sets, who have different SNP names,
 but same chromsome and base pair position.
 """
 function check_repeated_snp_list()
-    print_sst("The repeated SNP list")
-    dsnp = Dict()               # dictionary
-    ssnp = Set()                # set of all SNP
+    println("The repeated SNP list")
+    pair = Dict()               # Duplicated SNP and its duplicate
+    ssnp = Set()                # set of all duplicated SNP
     open("data/maps/duplicated.snp", "r") do io
         vsnp = String[]         # vector
         for line in eachline(io)
             a, b = split(line)
             push!(vsnp, a)
             push!(vsnp, b)
-            dsnp[a] = b
+            pair[a] = b
         end
         ssnp = Set(vsnp)
     end
 
-    #=
-    print_sst("Check manifest")
-    mnft = Dict()
-    open("data/maps/illumina/BovineSNP50_v3_A2.csv") do io
-        for _ in 1:8            # skip header
-            _ = readline(io)
-        end
-        for _ in 1:53218        # I know the number of SNP
-            x = split(readline(io), ',')
-            if x[2] in ssnp
-                mnft[x[2]] = uppercase(x[17])
-            end
-        end
-    end
-    for (a, b) in dsnp
-        x = mnft[a]
-        y = mnft[b]
-        if x ≠ y
-            z = reverse_complement(y)
-            if x ≠ z
-                println(a, '\t' , b)
-            end
-        end
-    end
-
-    print_sst("Compare genotypes")
+    println("Compare genotypes")
     sdir = "data/3-sets"
-    rmdir("tmp", recursive=true, force=true)
+    rm("tmp", recursive=true, force=true)
     mkdir("tmp")
     for country in ["dutch", "german", "norge"]
-        _ = read(`bin/plink --cow
-                            --bfile $sdir/$country
-                            --recode vcf-iid
-                            --out tmp/$country`,
-                 String)
-        dgtp = Dict()
-        open("tmp/$country.vcf", "r") do io
-            line = "######"
-            while line[2] == '#'
-                line = readline(io)
+        print_sst(country)
+        plink_2_vcf("$sdir/$country", "tmp/$country")
+        dsnp = snp_gt_dict("tmp/$country.vcf", ssnp)
+        # then check extracted genotypes
+        for (a, b) in pair
+            print_item("SNP pair:  $a <-> $b")
+            next = false
+            if !haskey(dsnp, a)
+                print_msg("$country has no SNP $a")
+                next = true
             end
-            while !eof(io)
-                x = split(readline(io))
-                if x[3] in ssnp
-                    dgtp[x[3]] = x[10:]
+            if !haskey(dsnp, b)
+                print_msg("$country has no SNP $b")
+                next = true
+            end
+            next && continue
+            x = dsnp[a]
+            y = dsnp[b]
+            tt = length(x)
+            ma = mb = cn = 0
+            for i in 1:tt
+                if x[i] == -1
+                    ma += 1
+                end
+                if y[i] == -1
+                    mb += 1
+                else
+                    if x[i] == y[i]
+                        cn += 1
+                    end
                 end
             end
-        end
-        # then check extracted genotypes
-        for (a, b) in dsnp
-            #println(a, '\t', b)
-            #for i in length(dgtp[a])
-            #for x in dgtp[a]
+            println("Total: $tt;  ma: $ma;  mb: $mb;  Same: $cn")
         end
     end
-    =#
-    
 end

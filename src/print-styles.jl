@@ -38,8 +38,8 @@ end
 ---
 Print message `Done` in light_green.
 """
-function print_done()
-    printstyled("\n...Done\n"; color=:light_green)
+function print_done(msg::AbstractString = "Done")
+    printstyled("\t... $msg\n"; color=:light_green)
 end
 
 """

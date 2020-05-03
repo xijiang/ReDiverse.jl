@@ -49,30 +49,34 @@ function extract_bed_subset(src::AbstractString,
 end
 
 """
-   miss_allele_stats(bfile, out, species = "cow")
+   miss_allele_stats(bfile, out, species = "cow", chr="1-29")
 ---
 Do statistics of missing values in `bfile`, and output them to `out`
 """
 function miss_allele_stats(bfile::AbstractString,
                            out::AbstractString,
-                           species::AbstractString = "cow")
+                           species::AbstractString = "cow",
+                           chr::AbstractString = "1-29")
     _ = read(`$plink --$species
                      --bfile $bfile
                      --missing
+                     --chr $chr
                      --out $out`,
              String);
 end
 
 """
-    allele_maf_stats(bfile, out, species = "cow")
+    allele_maf_stats(bfile, out, species = "cow", chr = "1-29")
 ---
 Do MAF statistics of `bfile`, and output to `out`.
 """
 function allele_maf_stats(bfile::AbstractString,
                           out::AbstractString,
-                          species::AbstractString = "cow")
+                          species::AbstractString = "cow",
+                          chr::AbstractString = "1-29")
     _ = read(`$plink --$species
                      --bfile $bfile
+                     --chr $chr
                      --nonfounders
                      --freq
                      --out $out`,
@@ -80,14 +84,17 @@ function allele_maf_stats(bfile::AbstractString,
 end
 
 """
-    hwe_stats(bfile, out, species = "cow")
+    hwe_stats(bfile, out, species = "cow", chr = "1-29")
 ---
+Hardy-Weinberg equillibrium test.
 """
 function hwe_stats(bfile::AbstractString,
                    out::AbstractString,
-                   species::AbstractString = "cow")
+                   species::AbstractString = "cow",
+                   chr::AbstractString = "1-29")
     _ = read(`$plink --$species
                      --bfile $bfile
+                     --chr $chr
                      --hardy
                      --out $out`,
                  String);

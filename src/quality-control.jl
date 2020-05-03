@@ -1,3 +1,4 @@
+#=
 """
     plot_miss(batch::String, dir::String)
 ---
@@ -74,31 +75,20 @@ function plot_freq(batch::String, dir::String)
                     label = "$batch: MAF histogram")
     Plots.savefig("$dir/$batch-maf.png")
 end
-
+=#
 """
-    quality_control(sdir::String, dpng::String)
+    plot_lmiss_n_hwe()
 ---
-# Description
-## Arguments
-- `sdir`: the source dir, i.e., where the plink files are
-- `dpng`: the result plots, in png format, will be put into this dir
-- I will user `tmp` dir to hold mid-results.
-
-## This driver will test
-1. Allele missing statistics
-2. Hardy-Weinberg test
-3. Mendelian error test
-4. Frequency test
-5. Plot of the results
-
-# Example
-## Quality control of the plink files in `data/plink`
-- `ReDiverse.quality_control("data/plink", "notebooks/png")`
-
-## QC `data/plkmax`
-- `ReDiverse.quality_control("data/plkmax", "notebooks/qc2")`
+Plot the loci missing results to determine thresholds to elimate SNP.
+Note:
+- I found it is better to plot accumulate distribution of allele missing rate.
+  - Hence I totally rewrote the function
+- This must be done after plink stats missing.
+- Removing low quality SNP seems should be the first step
+  - as there are many SNP, e.g., thousands.
+- Low quality ID can be done after this procedure.
 """
-function quality_control(sdir::String, dpng::String)
+function plot_lmiss_n_hwe()
     batches = ["dutch-10690",
                "dutch-10993",
                "dutch-11483",
@@ -110,13 +100,95 @@ function quality_control(sdir::String, dpng::String)
                "norge-777k",
                "norge-v1",
                "norge-v2"]
-    # src = "data/plink"
-    # tgt = "data/qc"
+    sdir = "data/plkmax"
+    tdir = "notebooks/fig"
+    isdir(tdir) || mkdir(tdir)
+    isdir("tmp") && rm("tmp", recursive=true, force=true)
+    mkdir("tmp")
+    
+    print_sst("Plotting l-missing and Hwe data")
+    for b in batches
+        print_item("Platform $b")
+        n = "t"                 # dummy, to read N_id. i don't parse it into Int here.
+        y = Float64[]
+        print_msg("Missing data stats")
+        miss_allele_stats("$sdir/$b", "tmp/$b")
+
+        open("tmp/$b.lmiss", "r") do io # plot lmiss
+            _ = readline(io)
+            while !eof(io)
+                line = readline(io)
+                n, m = [split(line)[i] for i in [4, 5]]
+                push!(y, parse(Float64, m))
+            end
+            sort!(y)
+        end
+
+        z = Float64[]
+        print_msg("HWE stats")
+        hwe_stats("$sdir/$b", "tmp/$b")
+        open("tmp/$b.hwe", "r") do io # plot hwe
+            _ = readline(io)
+            while !eof(io)
+                line = readline(io)
+                push!(z, parse(Float64, split(line)[9]))
+            end
+            sort!(z, rev = true)
+        end
+
+        print_msg("Plot the figures")
+        nlc = length(y)
+        x = range(0, 100., length = nlc)
+        p1 = plot(x, y,
+                  label = "$b l-miss",
+                  ylabel = "Missing freq., $n ID",
+                  xlabel = "Accumulate SNP%")
+        t = -log10.(z)
+        p2 = plot(x, t,
+                  label = "$b HWE",
+                  ylabel = "-log10 HWE P-value",
+                  xlabel = "Accumulate SNP%, $nlc loci")
+        plot(p1, p2, size=(800,300), dpi=300)
+                  
+        savefig("$tdir/$b-ms-hwe.png")
+        print_done()
+    end
+end
+
+"""
+    quality_control()
+---
+# Description
+## Arguments
+- `sdir`: the source dir, i.e., where the plink files are
+- I will user `tmp` dir to hold mid-results.
+
+## This driver will test
+1. Allele missing statistics
+2. Hardy-Weinberg test
+3. Frequency test
+
+# Example
+## Quality control of the plink files in `data/plink`
+- `ReDiverse.quality_control("data/plink")`
+"""
+function quality_control()
+    batches = ["dutch-10690",
+               "dutch-10993",
+               "dutch-11483",
+               "dutch-777k",
+               "dutch-v2",
+               "dutch-v3",
+               "german-v2",
+               "german-v3",
+               "norge-777k",
+               "norge-v1",
+               "norge-v2"]
+    sdir = "data/plink"
     print_sst("Test if all the bed files in $sdir are ready")
     are_files_ready(sdir, batches, "bed")
 
-    print_sst("Make folder, tmp/ and $dpng ready")
-    isdir(dpng) || mkdir(dpng)
+    print_sst("Make folder tmp ready")
     isdir("tmp") && rm("tmp", recursive=true, force=true)
     mkdir("tmp")
     println("The plink logs can be found in data/qc")
@@ -127,67 +199,13 @@ function quality_control(sdir::String, dpng::String)
     for batch in batches
         print_sst("Dealing with data batch: $batch")
         
-        print_item("Histogram missing data")
+        print_item("Missing data stats")
         miss_allele_stats("$sdir/$batch", "tmp/$batch")
-        #=
-        _ = read(`bin/plink
-                      --cow
-                      --bfile $sdir/$batch
-                      --missing
-                      --out tmp/$batch`,
-                 String);
-        =#
-        plot_miss(batch, dpng)
         
-        print_item("Histogram MAF")
+        print_item("MAF stats")
         allele_maf_stats("$sdir/$batch", "tmp/$batch")
-        #=
-        _ = read(`bin/plink
-                      --cow
-                      --bfile $sdir/$batch
-                      --nonfounders
-                      --freq
-                      --out tmp/$batch`,
-                 String);
-        =#
-        plot_freq(batch, dpng)
 
-        println("HWE test")
+        println("HWE stats")
         hwe_stats("$sdir/$batch", "tmp/$batch")
-        #=
-        _ = read(`bin/plink
-                      --cow
-                      --bfile $sdir/$batch
-                      --hardy
-                      --out tmp/$batch`,
-                 String);
-        =#
-    end
-end
-
-"""
-    qc_3_sets()
----
-Quality control of the 3 country sets. Note there are a few broken links
-between the vcf.gz files here, and 3-set/files. It is fast forward here.
-"""
-function qc_3_sets()
-    tdir = "notebooks/qc3"
-    isdir(tdir) || mkdir(tdir)
-    
-    for country in ["dutch", "german", "norge"]
-        print_sst(country)
-        
-        print_item("Histogram missing data")
-        vcf_2_plink("tmp/$country.vcf.gz", "tmp/$country")
-        miss_allele_stats("tmp/$country", "tmp/$country")
-        plot_miss(country, tdir)
-
-        print_item("Histogram MAF")
-        allele_maf_stats("tmp/$country", "tmp/$country")
-        plot_freq(country, tdir)
-
-        println("HWE test")
-        hwe_stats("tmp/$country", "tmp/$country")
     end
 end

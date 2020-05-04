@@ -1,40 +1,36 @@
 """
-    general_work_flow()
-# General guide line
-You many follow this general procecure to repeat my analyses.
-"""
-function general_work_flow()
-    function print_procedure(proc)
-        for p in proc
-            println(p)
-        end
-    end
-    print_msg("'from' and 'to' below need to be specified. See work-flow.jl")
-    print_sst("Data preparation")
-    proc = ["prepare_maps()", "orgGermanGT()", "orgDutchGT()", "orgNorgeGT()"]
-    print_procedure(proc)
-    if false              # Usually it is not necessary to run them from start
-        prepare_maps()              # four maps, 50kv{1,2,3}, 777k
-        orgGermanGT()               # To convert final reports to plink binaries
-        orgDutchGT()
-        orgNorgeGT()                # passed: Sat 18 Apr 2020 12:44:28 PM CEST
-    end
+    sandbox(test::Bool = true)
+---
+This function has two nested functions:
+- release()
+  - This holds the proved workflow steps
+- debug()
+  - The steps under test
 
-    print_sst("Quality control, all data")
-    print_procedure(["quality_control(from, to)"])
-    if false
-        quality_control("data/plink", "notebooks/png")
+By default, sandbox will call `debug()`. To run `release()`, call `sandbox(true)`.
+"""
+function sandbox(test::Bool = true)
+    function release()
+        print_desc("Release version")
+        print_desc("Warning: This will erase all previous results!!!")
+        
+        # The workflow
+        @time prepare_maps()    # v1-3 d1-3 and d7
+        @time update_maps() # only update Dutch and German data to 50k-v3
+        @time orgGermanGT() # merge German final reports to plink
+        @time orgDutchGT()  # merge Dutch final reports to plink
+        @time orgNorgeGT()  # just make soft links
+        @time auto_subset() # extract autosomal and SNP in target.snp
+        @time update_norge_map() # 
     end
-    #=
-    print_sst("Create subset for imputation")
-    proc = ["check_maps()", "check_maps_furthre()", "plink_subset_max()", "quality_control(from, to)", "merge_into_3_sets()"]
-    print_procedure(proc)
-    if false
-        check_maps()
-        check_maps_further()
-        plink_subset_max()
-        quality_control("data/plkmax", "notebooks/qc2")
-        merge_into_3_sets()
+    
+    function debug()
+        print_desc("Testing ...")
     end
-    =#
+    
+    if test
+        debug()
+    else
+        release()
+    end
 end

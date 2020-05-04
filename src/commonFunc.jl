@@ -1,34 +1,5 @@
 ################################################################################
 """
-    read_3c_map_file(file::String)
----
-This is to read a 3-column map files, to use with merge_final_report_2_plink_fam(lmap, ID)
-funciton, to create a plink fam file. The file must has the first 3 column as:
-1. SNP name
-2. chromosome name
-3. base pair position
-
-It return a Dict() of [snp::String] -> [chr::String, bp::String]
-
-# Example
-    ```juliarepl
-    julia> read_3c_map_file(file)
-    ```
-"""
-function read_3c_map_file(file::String)
-    tmap = Dict()
-    snp = chr = bp = ""::String
-    open(file, "r") do io
-        while !eof(io)
-            snp, chr, bp = split(readline(io))[1:3]
-            tmap[snp] = [chr, bp]
-        end
-    end
-    return tmap
-end
-
-################################################################################
-"""
     read_a_final_report()
 ---
 Given a file name of genotypes in Illumina final report format, this funciton
@@ -44,7 +15,7 @@ function read_a_final_report(file::String)
     id = ""::String
     gt = ""::String
     valid = Set(['A', 'C', 'G', 'T'])
-    
+
     open(file, "r") do io
         line = "pattern"
         for i in 1:5
@@ -56,7 +27,7 @@ function read_a_final_report(file::String)
         while line[1:3] ≠ "SNP" # the header may have 10 or 11 lines
             line = readline(io)
         end
-
+        
         for i in 1:n_loci
             line = readline(io)
             id, a, b = [split(line)[k] for k in [2, 3, 4]]
@@ -92,19 +63,17 @@ directory
 8. `*0, or zero` is for missing
 """
 function create_plink_ped(dir::String)
-    println("\nMerging genotypes in $dir to tmp/plink.ped")
     open("tmp/plink.ped", "w") do ped
         cnt = 0
         println("In directory $dir: ")
         for f in readdir(dir)
-            ID, genotype = read_a_final_report(dir * f)
+            ID, genotype = read_a_final_report("$dir/$f")
             cnt += 1
             print("\r    Dealing with file $f,  number ", cnt)
             write(ped, "dummy ", ID, " 0 0 0 -9 ")
             write(ped, join(split(genotype, ""), " "), '\n')
         end
     end
-    println("\nMerged genotypes written to tmp/plink.ped\n")
 end
 
 ########################################
@@ -120,7 +89,6 @@ This create a dictionary of SNP -> [chr, bp] and return it
 4. base pari position
 """
 function ref_map_dict(fmap)     # fmap: the physical map
-    println("Creating a SNP dictionary with $fmap")
     snpdic = Dict()
     open(fmap, "r") do io
         while !eof(io)
@@ -140,11 +108,10 @@ Given a `infile` in final report and a SNP map dictionary, `tmap`, which is a su
 in the final report, this subroutine write the plink map to `oofile`.
 """
 function create_plink_map(dir::String, tmap::Dict)
-    println("Create tmp/plink.map with the fist file in $dir")
-
     open("tmp/plink.map", "w") do foo
         line = "duummy"
-        open(dir*readdir(dir)[1], "r") do io
+        file = readdir(dir)[1]
+        open("$dir/$file", "r") do io
             while line[1:6] != "[Data]"
                 line = readline(io)
             end
@@ -183,26 +150,52 @@ If all alleles are missing on one locus, `plink` will report a triallele warning
 function merge_to_plink_bed(dir::String, ref::String, name::String)
     isdir("tmp") || mkdir("tmp")
 
+    print_item("Merge files in $dir to tmp/plink.ped")
     create_plink_ped(dir)
+    print_done()
 
+    print_item("Creating a SNP dictionary with $ref")
     snpdic = ref_map_dict(ref)
+    print_done()
 
+    print_item("Create tmp/plink.map with the fist file in $dir")
     create_plink_map(dir, snpdic) # read the first file to create tmp/plink.map
+    print_done()
 
-    println()
-
+    print_item("Merge ped and map to $name.bed")
     make_ped_n_map_to_bed("tmp/plink.ped", "tmp/plink.map", name)
-    #=
-    _ = read(`bin/plink --cow
-                        --recode
-                        --make-bed
-                        --ped tmp/plink.ped
-                        --map tmp/plink.map
-                        --out $name`,
-             String);
-    =#                          # Just in case
+    print_done()
+end
 
-    println()                   # to show time used more clearly
+#=
+Not going to use any more
+
+"""
+    read_3c_map_file(file::String)
+---
+This is to read a 3-column map files, to use with merge_final_report_2_plink_fam(lmap, ID)
+funciton, to create a plink fam file. The file must has the first 3 column as:
+1. SNP name
+2. chromosome name
+3. base pair position
+
+It return a Dict() of [snp::String] -> [chr::String, bp::String]
+
+# Example
+    ```juliarepl
+    julia> read_3c_map_file(file)
+    ```
+"""
+function read_3c_map_file(file::String)
+    tmap = Dict()
+    snp = chr = bp = ""::String
+    open(file, "r") do io
+        while !eof(io)
+            snp, chr, bp = split(readline(io))[1:3]
+            tmap[snp] = [chr, bp]
+        end
+    end
+    return tmap
 end
 
 """
@@ -351,22 +344,5 @@ function snp_gt_dict(vcf::AbstractString, snp::Set)
         end
     end
     return dic
-end
-
-#=
-"""
-    reverse_complement(seq::String)
----
-Return the reverse and complement of sequence `seq`. It is supposed `seq` are all of upper case.
-The dictionary is: "ACGT[]/NY" -> "TGCA][/NY". Otherwise, the character is not translated.
-"""
-function reverse_complement(seq::AbstractString)
-    comp = Dict()
-    str = "ACGT[]/NYRKSWMTGCA][/NYRKSWM"
-    n = Int(length(str)/2)
-    for i in 1:n
-        comp[str[i]] = str[i+n]
-    end
-    return reverse(map(x -> comp[x], seq))
 end
 =#

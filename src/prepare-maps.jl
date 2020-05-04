@@ -1,16 +1,17 @@
 ################################################################################
 """
     prepare_maps()
-
 ---
-
-# ToDo
+# Job descriptions
 This is to prepare various maps:
 1. [x] Illumina cow 50k v1
 2. [x] Illumina cow 50k v2
 3. [x] Illumina cow 50k v3
 4. [x] Illumina cow 777k
-5. A dutch map
+5. [x] Three dutch map
+   - 10690
+   - 10993
+   - 11483
 
 This is suppose to run once for all. It also garantee the maps created meet the
 requirements of downstream analysis, e.g., to merge with plink.ped.
@@ -26,8 +27,11 @@ A subset should be made for that.
 4. Base-pair position (bp units)
 """
 function prepare_maps()
-    println("Extract Name, Chr, Mapinfo columns from the Illumina 777k mnft")
-    ifile, ofile = ["data/maps/illumina/hd-mnft.csv", "data/maps/777k.map"]
+    tdir = "data/maps/origin"
+    isdir(tdir) || mkdir(tdir)
+    
+    print_sst("Extract Name, Chr, Mapinfo columns from the Illumina 777k mnft")
+    ifile, ofile = ["data/maps/illumina/hd-mnft.csv", "$tdir/v7.map"]
     buffer = readlines(ifile)
     nsnp = parse(Int, split(buffer[6], ',')[2])
     open(ofile, "w") do io      # this will overwrite the file anyway
@@ -40,8 +44,8 @@ function prepare_maps()
     end
     println("777k data written to $ofile\n")
 
-    println("Extract Name, Chr, Mapinfo columns from the Illumina 50k v1")
-    ifile, ofile = ["data/maps/illumina/cow.50k.v1.tsv", "data/maps/50kv1.map"]
+    print_sst("Extract Name, Chr, Mapinfo columns from the Illumina 50k v1")
+    ifile, ofile = ["data/maps/illumina/cow.50k.v1.tsv", "$tdir/v1.map"]
     buffer = readlines(ifile)
     open(ofile, "w") do io
         for i in 2:length(buffer)
@@ -53,8 +57,8 @@ function prepare_maps()
     end
     println("50k v1 data written to $ofile\n")
     
-    println("Extract Name, Chr, Mapinfo columns from the Illumina 50k v2")
-    ifile, ofile = ["data/maps/illumina/cow.50k.v2.tsv", "data/maps/50kv2.map"]
+    print_sst("Extract Name, Chr, Mapinfo columns from the Illumina 50k v2")
+    ifile, ofile = ["data/maps/illumina/cow.50k.v2.tsv", "$tdir/v2.map"]
     buffer = readlines(ifile)
     open(ofile, "w") do io
         for i in 2:length(buffer)
@@ -66,8 +70,8 @@ function prepare_maps()
     end
     println("50k v2 data written to $ofile\n")
     
-    println("Extract Name, Chr, Mapinfo columns from the Illumina 50k v3")
-    ifile, ofile = ["data/maps/illumina/BovineSNP50_v3_A2.csv", "data/maps/50kv3.map"]
+    print_sst("Extract Name, Chr, Mapinfo columns from the Illumina 50k v3")
+    ifile, ofile = ["data/maps/illumina/BovineSNP50_v3_A2.csv", "$tdir/v3.map"]
     buffer = readlines(ifile)
     nsnp = parse(Int, split(buffer[6], ',')[2])
     open(ofile, "w") do io
@@ -79,4 +83,44 @@ function prepare_maps()
         end
     end
     println("50k v3 data written to $ofile\n")
+
+    print_sst("Make soft links of 3 Dutch maps")
+    dir = pwd()
+    cd(tdir)
+    symlink("../dutch-ld/10690.map", "d1.map")
+    symlink("../dutch-ld/10993.map", "d2.map")
+    symlink("../dutch-ld/11483.map", "d3.map")
+    cd(dir)
+end
+
+"""
+    update_maps()
+---
+This function read `v3.map` in `data/maps/origin` as dictionary. Then update the rest with this dictionary.
+"""
+function update_maps()
+    sdir = "data/maps/origin"
+    tdir = "data/maps/updated"
+    isdir(tdir) || mkdir(tdir)
+
+    print_sst("v3.map")
+    dic = Dict()
+    for line in eachline("$sdir/v3.map")
+        snp, chr, bp = split(line)
+        dic[snp] = [chr, bp]
+    end
+    cp("$sdir/v3.map", "$tdir/v3.map", force=true)
+
+    for ver in ["d1", "d2", "d3", "v1", "v2", "v7"]
+        print_sst("$ver.map")
+        target = open("$tdir/$ver.map", "w")
+        for line in eachline("$sdir/$ver.map")
+            snp, chr, bp = split(line)
+            if haskey(dic, snp)
+                write(target, snp, ' ', dic[snp][1], ' ', dic[snp][2], '\n')
+            else
+                write(target, line, '\n')
+            end
+        end
+    end
 end

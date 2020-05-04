@@ -7,7 +7,7 @@ But thic can also be run after new C++ codes were written.
 """
 function make()
     isdir("bin") || mkdir("bin")
-    #gpp = "g++ -O2 -Wall"
+    #gpp = "g++ -O2 -std=c++17 -Wall"
     bins = ["fr2ped",
             "keep-vcf-snp",
             "merge-dup",

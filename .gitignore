@@ -24,7 +24,7 @@ docs/site/
 Manifest.toml
 notebooks/.ipynb_checkpoints/
 src/.ipynb_checkpoints/
-data
+data/
 bin/
 plink-ng/
 tmp/

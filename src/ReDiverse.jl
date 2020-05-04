@@ -29,8 +29,9 @@ include("commonFunc.jl")
 include("prepare-tools.jl")
 include("prepare-maps.jl")
 include("raw-genotype-org.jl")
+include("auto-subset.jl")
+
 include("quality-control.jl")
-include("extract-loci.jl")
 include("merge-n-filter-gt.jl")
 include("clean-before-impute.jl")
 include("plink-cmd.jl")
@@ -38,6 +39,5 @@ include("print-styles.jl")
 include("makefile.jl")
 include("test-funcs.jl")
 
-include("work-flow.jl")
-include("sandbox.jl")           # has the only exported funciton
+include("work-flow.jl")         # provides sandbox()
 end # module

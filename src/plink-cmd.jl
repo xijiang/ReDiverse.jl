@@ -43,7 +43,7 @@ function extract_bed_subset(src::AbstractString,
     _ = read(`$plink --$species
                      --bfile $src
                      --extract $snp
-                     --recode
+                     --make-bed
                      --out $out`,
              String)
 end
@@ -142,5 +142,20 @@ function vcf_2_plink(src::AbstractString,
                      --vcf $src
                      --const-fid
                      --out $out`,
+             String)
+end
+
+"""
+    plink_2_map_n_ped(src::AbstractString, out::AbstractString, species::AbstractString = "cow")
+---
+Recode `plink.{bed,bim,fam}` to `plink.{map,ped}`.
+"""
+function plink_2_map_n_ped(src::AbstractString,
+                           out::AbstractString,
+                           species::AbstractString = "cow")
+    _ = read(`$plink --$species
+		     --bfile $src
+		     --recode
+		     --out $out`,
              String)
 end

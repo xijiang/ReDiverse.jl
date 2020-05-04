@@ -17,7 +17,6 @@ end
 This function print the msg as soft warning, i.e., the text color is of :light_magenta
 """
 function print_msg(msg::AbstractString)
-    println()
     printstyled('\n', msg, '\n'; color = :light_magenta)
 end
 

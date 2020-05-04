@@ -1,3 +1,67 @@
+#=
+"""
+    plink_subset_max()
+---
+This is to
+1. take the genotype subset from each plink file, according data/maps/target.snp
+2. update the map according 50kv3.map
+
+So that the data are ready for QC and imputation. The results from this procedure
+are subject to another quality control. Hence, the number of SNP obtained here are
+the upper limit. I will have a function `plink_subset_final`, to produce results
+for imputation. This is very long and ugly function
+"""
+function plink_subset_max()
+    mdir = "data/maps"          # the old maps
+    pdir = "data/ori.plk"       # where the collected genotypes are
+    tdir = "data/max.plk" # holds plink files filtered and map updated.
+    isdir(tdir) || mkdir(tdir)
+    isdir("tmp") || mkdir("tmp") # the working dir.
+
+    ##################################################
+    print_sst("Create a target map dictionary")
+    mtgt = create_map_dict("data/maps/target.snp", "data/maps/50kv3.map")
+    print_done()
+
+    ##################################################
+    print_sst("Dealing with Dutch data")
+    pre = "dutch-"
+    pair = Dict([("10690", "dutch-ld/10690"),
+                 ("10993", "dutch-ld/10690"),
+                 ("11483", "dutch-ld/11483"),
+                 ("v2",    "50kv2"),
+                 ("v3",    "50kv3"),
+                 ("777k",  "777k")])
+    for (g, m) in pair
+        update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
+    end
+    print_done()
+
+    ##################################################
+    print_sst("Dealing with German data")
+    pre = "german-"
+    pair = Dict([("v2", "50kv2"),
+                 ("v3", "50kv3")])
+    for (g, m) in pair
+        update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
+    end
+    print_done()
+
+    ##################################################
+    print_sst("Dealing with Norge data")
+    pre = "norge-"
+    pair = Dict([("v1",   "50kv1"),
+                 ("v2",   "50kv2"),
+                 ("777k", "777k")])
+    for (g, m) in pair
+        update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
+    end
+    print_done()
+end
+
+Note below only demonstrate that to update the maps to 50kv3 is necessary.
+No need to run later.
+
 """
     check_map_ver()
 ---
@@ -112,64 +176,4 @@ function check_maps_further()
             length(intersect(tgt, d2)),
             length(intersect(tgt, d3)))
 end
-
-"""
-    plink_subset_max()
----
-This is to
-1. take the genotype subset from each plink file, according data/maps/target.snp
-2. update the map according 50kv3.map
-
-So that the data are ready for QC and imputation. The results from this procedure
-are subject to another quality control. Hence, the number of SNP obtained here are
-the upper limit. I will have a function `plink_subset_final`, to produce results
-for imputation. This is very long and ugly function
-"""
-function plink_subset_max()
-    mdir = "data/maps"          # the old maps
-    pdir = "data/plink"         # where the collected genotypes are
-    tdir = "data/plkmax" # holds plink files filtered and map updated.
-    isdir(tdir) || mkdir(tdir)
-    rm("tmp", recursive=true, force=true) # make the 
-    mkdir("tmp")
-
-    ##################################################
-    print_sst("Create a target map dictionary")
-    mtgt = create_map_dict("data/maps/target.snp", "data/maps/50kv3.map")
-    print_done()
-
-    ##################################################
-    print_sst("Dealing with Dutch data")
-    pre = "dutch-"
-    pair = Dict([("10690", "dutch-ld/10690"),
-                 ("10993", "dutch-ld/10690"),
-                 ("11483", "dutch-ld/11483"),
-                 ("v2",    "50kv2"),
-                 ("v3",    "50kv3"),
-                 ("777k",  "777k")])
-    for (g, m) in pair
-        update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
-    end
-    print_done()
-
-    ##################################################
-    print_sst("Dealing with German data")
-    pre = "german-"
-    pair = Dict([("v2", "50kv2"),
-                 ("v3", "50kv3")])
-    for (g, m) in pair
-        update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
-    end
-    print_done()
-
-    ##################################################
-    print_sst("Dealing with Norge data")
-    pre = "norge-"
-    pair = Dict([("v1",   "50kv1"),
-                 ("v2",   "50kv2"),
-                 ("777k", "777k")])
-    for (g, m) in pair
-        update_bed("$pdir/$pre$g", "$mdir/$m.map", mtgt)
-    end
-    print_done()
-end
+=#

@@ -16,18 +16,19 @@ The data consist four platfomrs:
 * Errror check need to be included
 """
 function orgGermanGT()
-    println("Ignoring data in data/genotypes/german/ld\n")
-    println("Ignoring data in data/genotypes/german/md\n")
+    print_msg("Ignoring data in data/genotypes/german/ld")
+    print_msg("Ignoring data in data/genotypes/german/md")
 
-    dir = "data/genotypes/german/"
-    mdr = "data/maps/"
-    den = "data/plink/german-"
+    dir = "data/genotypes/german"
+    mdr = "data/maps/updated"
+    den = "data/genotypes/ori.plk"
+    isdir(den) || mkdir(den)
+    den *= "/german"
 
-    println("Dealing with the data with platform 50k v2")
-    @time merge_to_plink_bed(dir*"v2/", mdr*"50kv2.map", den*"v2")
-
-    println("Dealing with the data with platform 50k v3")
-    @time merge_to_plink_bed(dir*"v3/", mdr*"50kv3.map", den*"v3")
+    for ver in ["v2", "v3"]
+        print_sst("Dealing with the German data with platform $ver")
+        @time merge_to_plink_bed("$dir/$ver", "$mdr/$ver.map", "$den-$ver")
+    end
 end
 
 """
@@ -42,30 +43,30 @@ I am doing them with `Julia` procedure.
 3. platform 11483,  109 ID
 4. platform    v2,  343 ID
 5. platform    v3,   44 ID
+6. platform  777k,   10 ID
 """
 function orgDutchGT()
-    dir = "data/genotypes/dutch/"
-    mdr = "data/maps/"
-    den = "data/plink/dutch-"
+    dir = "data/genotypes/dutch"
+    mdr = "data/maps/updated"
+    den = "data/genotypes/ori.plk/dutch"
 
-    println("Dutch data, platform 50kv2")
-    @time merge_to_plink_bed(dir*"54609/", mdr*"50kv2.map", den*"v2")
+    print_sst("Dutch data, platform 50kv2")
+    @time merge_to_plink_bed("$dir/54609", "$mdr/v2.map", "$den-v2")
 
-    println("Dutch data, platform 50kv3")
-    @time merge_to_plink_bed(dir*"50kv3/", mdr*"50kv3.map", den*"v3")
+    print_sst("Dutch data, platform 50kv3")
+    @time merge_to_plink_bed("$dir/50kv3", "$mdr/v3.map", "$den-v3")
 
-    println("Dutch data, platform 777k")
-    @time merge_to_plink_bed(dir*"777k/", mdr*"777k.map", den*"777k")
+    print_sst("Dutch data, platform 777k")
+    @time merge_to_plink_bed("$dir/777k", "$mdr/v7.map", "$den-v7")
 
-    mdr = "data/maps/dutch-ld/"
-    println("Datch data, platform 10690")
-    @time merge_to_plink_bed(dir*"10690/", mdr*"10690.map", den*"10690")
+    print_sst("Datch data, platform 10690")
+    @time merge_to_plink_bed("$dir/10690", "$mdr/d1.map", "$den-d1")
 
-    println("Datch data, platform 10993")
-    @time merge_to_plink_bed(dir*"10993/", mdr*"10993.map", den*"10993")
+    print_sst("Datch data, platform 10993")
+    @time merge_to_plink_bed("$dir/10993", "$mdr/d2.map", "$den-d2")
 
-    println("Datch data, platform 11483")
-    @time merge_to_plink_bed(dir*"11483/", mdr*"11483.map", den*"11483")
+    print_sst("Datch data, platform 11483")
+    @time merge_to_plink_bed("$dir/11483", "$mdr/d3.map", "$den-d3")
 end
 
 
@@ -76,8 +77,6 @@ This is to mange Norwegian genotype data. Since the data were already in plink f
 some soft links to `data/plink`
 """
 function orgNorgeGT()
-    cdir = pwd()
-
     src = ["illumina54k_v1.bed",
            "illumina54k_v1.bim",
            "illumina54k_v1.fam",
@@ -93,12 +92,16 @@ function orgNorgeGT()
            "norge-v2.bed",
            "norge-v2.bim",
            "norge-v2.fam",
-           "norge-777k.bed",
-           "norge-777k.bim",
-           "norge-777k.fam"]
+           "norge-v7.bed",
+           "norge-v7.bim",
+           "norge-v7.fam"]
     
+    print_sst("Make soft links of Norwegian genotypes to genotypes/ori.plk")
+    dir = pwd()
+    cd("data/genotypes/ori.plk")
     for i in 1:length(src)
         a, b = [src den][i, :]
-        run(`ln -s $cdir/data/genotypes/norge/$a data/plink/$b`)
+        symlink("../norge/$a", b)
     end
+    cd(dir)
 end

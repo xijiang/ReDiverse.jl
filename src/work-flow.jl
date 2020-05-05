@@ -21,12 +21,19 @@ function sandbox(test::Bool = true)
         @time orgDutchGT()  # merge Dutch final reports to plink
         @time orgNorgeGT()  # just make soft links
         @time auto_subset() # extract autosomal and SNP in target.snp
-        @time update_norge_map() # 
+        @time update_norge_map() # Norge data formt was in plink
+        @time plot_lmiss_n_hwe()
+        
+        # may run below again for different QC standards
+        @time filter_lowQ_snp(maf = 0.02) # Note: to be decided.
+        @time plot_imiss()
+        @time filter_id(0.1)
+        @time merge_into_3_sets()
     end
     
     function debug()
         print_desc("Testing ...")
-        @time plot_lmiss_n_hwe()
+        @time beagle_impute()
     end
     
     if test

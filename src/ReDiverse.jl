@@ -30,8 +30,9 @@ include("prepare-tools.jl")
 include("prepare-maps.jl")
 include("raw-genotype-org.jl")
 include("auto-subset.jl")
-
 include("quality-control.jl")
+include("merge-n-impute.jl")
+
 include("merge-n-filter-gt.jl")
 include("clean-before-impute.jl")
 include("plink-cmd.jl")

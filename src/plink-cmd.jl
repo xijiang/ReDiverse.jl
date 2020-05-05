@@ -108,7 +108,7 @@ end
 function plink_merge(list::AbstractString,
                      out::AbstractString,
                      species::AbstractString = "cow")
-    _ = read(`$plink --species
+    _ = read(`$plink --$species
                      --merge-list $list
                      --make-bed
                      --out $out`,
@@ -131,12 +131,12 @@ function plink_2_vcf(src::AbstractString,
 end
 
 """
-    vcf_2_plink(src::AbstractString, out::AbstractString = "plink", species::AbstractString = "cow")
+    vcf_2_plink(src::AbstractString, out::AbstractString, species::AbstractString = "cow")
 ---
 Convert a VCF file to plink.{bed,bim,fam}
 """
 function vcf_2_plink(src::AbstractString,
-                     out::AbstractString = "plink",
+                     out::AbstractString,
                      species::AbstractString = "cow")
     _ = read(`$plink --$species
                      --vcf $src
@@ -156,6 +156,50 @@ function plink_2_map_n_ped(src::AbstractString,
     _ = read(`$plink --$species
 		     --bfile $src
 		     --recode
+		     --out $out`,
+             String)
+end
+
+
+"""
+    plink_filter_snp(src::AbstractString, geno, maf, hwe, out, species = "cow")
+---
+- Refer: https://github.com/pcgoddard/Burchardlab_Tutorials/wiki/PLINK:-Quality-Control
+
+Filter `src` in bed format according to geno, maf, and hwe to `target` in bed format. where,
+- geno: maximum miss ratio of a SNP loci
+- maf: minimu allele frequency
+- hwe: minimum p value of hwe statistics
+"""
+function plink_filter_snp(src::AbstractString,
+                          geno::Float64,
+                          maf::Float64,
+                          hwe::Float64,
+                          out::AbstractString,
+                          species::AbstractString = "cow")
+    _ = read(`$plink --$species
+                     --bfile $src
+                     --geno $geno
+                     --maf $maf
+                     --hwe $hwe
+                     --make-bed
+                     --out $out`,
+             String)
+end
+
+"""
+    plink_filter_id(src, mind, out, species = "cow")
+---
+Remove ID with missing allele rate over `mind`
+"""
+function plink_filter_id(src::AbstractString,
+                         mind::Float64,
+                         out::AbstractString,
+                         species::AbstractString = "cow")
+    _ = read(`$plink --$species
+		     --bfile $src
+		     --mind $mind
+		     --make-bed
 		     --out $out`,
              String)
 end

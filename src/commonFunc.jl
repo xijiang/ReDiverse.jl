@@ -178,6 +178,19 @@ function mkdir_tmp(dir::AbstractString = "tmp")
     mkdir(dir)
 end
 
+"""
+Create SNP Set from a bim file
+"""
+function get_bim_snp_set(bim::AbstractString)
+    ssnp = Set()
+    vsnp = String[]
+    for line in eachline(bim)
+        push!(vsnp, split(line)[2])
+    end
+    ssnp = Set(vsnp)
+    return ssnp
+end
+
 #=
 Not going to use any more
 

@@ -75,23 +75,23 @@ end
 ---
 This is to mange Norwegian genotype data. Since the data were already in plink format, I just make
 some soft links to `data/plink`
+
+## Notes:
+- Platform V2 needs special treatment
+- It was converted to VCF format, and then converted to bed format again
+  - to circumvent some HWE problem
+- Need to find ou the reason later.
 """
 function orgNorgeGT()
     src = ["illumina54k_v1.bed",
            "illumina54k_v1.bim",
            "illumina54k_v1.fam",
-           "illumina54k_v2.bed",
-           "illumina54k_v2.bim",
-           "illumina54k_v2.fam",
            "illumina777k.bed",
            "illumina777k.bim",
            "illumina777k.fam"]
     den = ["norge-v1.bed",
            "norge-v1.bim",
            "norge-v1.fam",
-           "norge-v2.bed",
-           "norge-v2.bim",
-           "norge-v2.fam",
            "norge-v7.bed",
            "norge-v7.bim",
            "norge-v7.fam"]
@@ -101,7 +101,12 @@ function orgNorgeGT()
     cd("data/genotypes/ori.plk")
     for i in 1:length(src)
         a, b = [src den][i, :]
+        isfile(b) && rm(b)
         symlink("../norge/$a", b)
     end
     cd(dir)
+
+    mkdir_tmp()
+    plink_2_vcf("data/genotypes/norge/illumina54k_v2", "tmp/plink")
+    vcf_2_plink("tmp/plink.vcf", "data/genotypes/ori.plk/norge-v2")
 end

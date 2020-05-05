@@ -18,7 +18,7 @@ A package to organize and analysis ReDiverse data. Below are the `ToDo`s
 
 """
 module ReDiverse
-using Plots, LaTeXStrings, Test, Printf
+using Plots, Plots.Measures, LaTeXStrings, Test, Printf
 
 plink  = "bin/plink"
 beagle = "bin/beagle.jar"

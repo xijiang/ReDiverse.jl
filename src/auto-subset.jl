@@ -20,7 +20,7 @@ function auto_subset()
     sdir = "data/genotypes/ori.plk"
     tdir = "data/genotypes/auto.plk"
     isdir(tdir) || mkdir(tdir)
-    isdir("tmp") || mkdir("tmp")
+    mkdir_tmp()
 
     print_sst("Creating autosomal subset")
     for plk in plks
@@ -51,9 +51,7 @@ function update_norge_map()
     sdir = "data/genotypes/auto.plk"
     
     print_item("Prepare files")
-    for file in readdir("tmp")
-        rm("tmp/$file", force=true)
-    end
+    mkdir_tmp()
     for file in readdir(sdir)
         SubString(file, 1:5) == "norge" && mv("$sdir/$file", "tmp/$file", force=true)
     end

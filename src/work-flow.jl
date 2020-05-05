@@ -26,6 +26,7 @@ function sandbox(test::Bool = true)
     
     function debug()
         print_desc("Testing ...")
+        @time plot_lmiss_n_hwe()
     end
     
     if test

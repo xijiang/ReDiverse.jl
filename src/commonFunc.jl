@@ -167,6 +167,17 @@ function merge_to_plink_bed(dir::String, ref::String, name::String)
     print_done()
 end
 
+"""
+    mkdir_tmp(dir::AbstractString = "tmp")
+---
+- If not exists, make it. 
+- If exists, clean all files and folders in it.
+"""
+function mkdir_tmp(dir::AbstractString = "tmp")
+    isdir(dir) && rm(dir, force=true, recursive=true)
+    mkdir(dir)
+end
+
 #=
 Not going to use any more
 

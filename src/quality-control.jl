@@ -52,19 +52,27 @@ function plot_lmiss_n_hwe()
         print_msg("Plot the figures")
         nlc = length(y)
         x = range(0, 100., length = nlc)
+        h = 0.1                 # the threshold
         p1 = plot(x, y,
                   label = "$pf l-miss",
                   ylabel = "Missing freq., $n ID",
                   xlabel = "Accumulate SNP%",
                   bottom_margin=2mm)
-        plot!(p1, [0.1], seriestype="hline", label="Missing frq. = 0.1")
+        plot!(p1, [h], seriestype="hline", width=.5, label="Missing frq. = $h")
+        v = round(count(x->x<h, y) / nlc * 100, digits = 2)
+        plot!(p1, [v], seriestype="vline", width=.5, label="Resv. rate = $v%")
+
         
         t = -log10.(z)
+        h = 0.0001              # the threshold
         p2 = plot(x, t,
                   label = "$pf HWE",
                   ylabel = "-log10 HWE P-value",
                   xlabel = "Accumulate SNP%, $nlc loci")
-        plot!(p2, [4], seriestype="hline", label="P(hwe) = 0.0001")
+        plot!(p2, [-log10(h)], seriestype="hline", width=.5, label="P(hwe) = $h")
+        v = round(count(x->x>h, z) /nlc *100, digits = 2)
+        plot!(p2, [v], seriestype="vline", width=.5, label="Resv. rate = $v%")
+        
         plot(p1, p2, size=(800,300), dpi=300)
                   
         savefig("$tdir/$pf-ms-hwe.png")

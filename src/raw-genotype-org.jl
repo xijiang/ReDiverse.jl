@@ -1,3 +1,45 @@
+################################################################################
+"""
+    merge_to_plink_ped(dir::String, ref::String, name::String)
+---
+# Introduction
+This is a simple covertion program from Illumina final report to plink bed.
+I simply put the pa, ma ID and sex as `0`.
+No phenotype is provided, hence `-9` for the phenotype column.
+I put a default family name as `dummy`.
+
+# Arguments
+- dir: where holds the final report files (and only)
+- ref: the reference physical map file name
+- name: results will be put to data/plink/name.*
+
+# C++ codes
+I also wrote a C++ program, fr2ped.cpp, which uses only a tiny fraction of time
+used by this Julia program.
+
+# Note
+If all alleles are missing on one locus, `plink` will report a triallele warning.
+"""
+function merge_to_plink_bed(dir::String, ref::String, name::String)
+    isdir("tmp") || mkdir("tmp")
+
+    print_item("Merge files in $dir to tmp/plink.ped")
+    create_plink_ped(dir)
+    print_done()
+
+    print_item("Creating a SNP dictionary with $ref")
+    snpdic = ref_map_dict(ref)
+    print_done()
+
+    print_item("Create tmp/plink.map with the fist file in $dir")
+    create_plink_map(dir, snpdic) # read the first file to create tmp/plink.map
+    print_done()
+
+    print_item("Merge ped and map to $name.bed")
+    make_ped_n_map_to_bed("tmp/plink.ped", "tmp/plink.map", name)
+    print_done()
+end
+
 # This was done on: Sat 18 Apr 2020 12:44:28 PM CEST
 # by Xijiang Yu
 
@@ -26,8 +68,14 @@ function orgGermanGT()
     den *= "/german"
 
     for ver in ["v2", "v3"]
-        print_sst("Dealing with the German data with platform $ver")
-        @time merge_to_plink_bed("$dir/$ver", "$mdr/$ver.map", "$den-$ver")
+        print_sst("Dealing with the German data in $dir/$ver")
+        list = readdir("$dir/ver")
+        fr2ped(dir, list, "tmp/plink.ped") # default acquire "AB" results
+
+        print_item("Creating a SNP dictionary with $ref")
+        snpdic = ref_map_dict(ref)
+        print_done()
+        merge_to_plink_bed("$dir/$ver", "$mdr/$ver.map", "$den-$ver")
     end
 end
 

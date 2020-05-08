@@ -28,6 +28,7 @@ export sandbox
 include("commonFunc.jl")
 include("prepare-tools.jl")
 include("prepare-maps.jl")
+include("final-reports-2-ped.jl")
 include("raw-genotype-org.jl")
 include("auto-subset.jl")
 include("quality-control.jl")

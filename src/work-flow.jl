@@ -29,11 +29,16 @@ function sandbox(test::Bool = true)
         @time plot_imiss()
         @time filter_id(0.1)
         @time merge_into_3_sets()
+
+        # to be tested
+        @time beagle_impute()
     end
     
     function debug()
         print_desc("Testing ...")
-        @time beagle_impute()
+        dir = "data/genotypes/german/v2"
+        list = readdir(dir)
+        fr2ped(dir, list, "tmp/plink.ped") # default acquire "AB" results
     end
     
     if test

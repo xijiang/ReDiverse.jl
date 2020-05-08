@@ -29,3 +29,4 @@ bin/
 plink-ng/
 tmp/
 notebooks/pdf/
+.ipynb_checkpoints/

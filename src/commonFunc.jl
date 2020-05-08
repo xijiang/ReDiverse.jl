@@ -4,19 +4,18 @@
 ---
 This create a dictionary of SNP -> [chr, bp] and return it
 
-# Notes
+## Notes
+The 3 columns in `fmap`:
+
 1. chromosome
 2. SNP-name
-3. linkage distance, can be 0
-4. base pari position
+3. base pair position
 """
 function ref_map_dict(fmap)     # fmap: the physical map
     snpdic = Dict()
-    open(fmap, "r") do io
-        while !eof(io)
-            snp, chr, bp = split(readline(io))
-            snpdic[snp] = [chr, bp]
-        end
+    for line in eachline(fmap)
+        snp, chr, bp = split(line)
+        snpdic[snp] = [chr, bp]
     end
 
     return snpdic
@@ -24,25 +23,50 @@ end
 
 ################################################################################
 """
-    create_plink_map(dir::String, tmap::Dict)
+    create_plink_map(sample::String, dic::Dict, to::String)
 ---
-Given a `infile` in final report and a SNP map dictionary, `tmap`, which is a super set of SNP
-in the final report, this subroutine write the plink map to `oofile`.
+Given a `sample` in final report format and a SNP -> [chr, bp] dictionary, `dic`,
+which is a super set of SNP in the final report, this subroutine write a plink
+map to `to`.
 """
-function create_plink_map(dir::String, tmap::Dict)
-    open("tmp/plink.map", "w") do foo
-        line = "duummy"
-        file = readdir(dir)[1]
-        open("$dir/$file", "r") do io
-            while line[1:6] != "[Data]"
-                line = readline(io)
+function create_plink_map(sample::String, dic::Dict, to::String)
+    open(to, "w") do foo
+        open(sample, "r") do sp
+            for line in eachline(sp)
+                occursin("SNP Name", line) && break
             end
-            _ = readline(io)
-            while !eof(io)
-                snp = split(readline(io))[1]
-                chr, bp = tmap[snp]
+            for line in eachline(sp)
+                snp = split(line)[1]
+                chr, bp = dic[snp]
                 write(foo, chr, ' ', snp, " 0 ", bp, '\n')
             end
+        end
+    end
+end
+
+##################################################
+"""
+    clean_all(; force=false)
+---
+Remove all intermediate data results.  Take care to call this function
+"""
+function clean_all(; force::Bool = false)
+    list = ["data/maps/origin",
+            "data/maps/updated",
+            "data/genotypes/step-1.plk"]
+    if force
+        for l in list
+            item("Removing '$l'")
+            rm(l, force=true, recursive=true)
+            done()
+        end
+    else
+        title("Remove all intermediate results")
+        message("Are you sure to remove all intermediate results?\n" *
+                "If so, call `clean_all(force = true)\n" *
+                "And these directories will be removed:")
+        for l in list
+            println("- $l")
         end
     end
 end

@@ -9,17 +9,18 @@ This function has two nested functions:
 
 By default, sandbox will call `debug()`. To run `release()`, call `sandbox(true)`.
 """
-function sandbox(test::Bool = true)
+function sandbox_ReDiverse(test::Bool = true)
     function release()
-        print_desc("Release version")
-        print_desc("Warning: This will erase all previous results!!!")
+        message("Release version")
+        message("Warning: This will overwrite all previous results!!!")
         
         # The workflow
         @time prepare_maps()    # v1-3 d1-3 and d7
         @time update_maps() # only update Dutch and German data to 50k-v3
         @time orgGermanGT() # merge German final reports to plink
         @time orgDutchGT()  # merge Dutch final reports to plink
-        @time orgNorgeGT()  # just make soft links
+        
+        #@time orgNorgeGT()  # waiting for new data.
         @time auto_subset() # extract autosomal and SNP in target.snp
         @time update_norge_map() # Norge data formt was in plink
         @time plot_lmiss_n_hwe()
@@ -35,10 +36,8 @@ function sandbox(test::Bool = true)
     end
     
     function debug()
-        print_desc("Testing ...")
-        dir = "data/genotypes/german/v2"
-        list = readdir(dir)
-        fr2ped(dir, list, "tmp/plink.ped") # default acquire "AB" results
+        message("Testing ...")
+        @time orgNorgeGT()
     end
     
     if test

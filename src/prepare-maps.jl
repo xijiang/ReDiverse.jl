@@ -21,76 +21,95 @@ The Illumina platfomr 50k v1-3 has more SNP than those in the final reports.
 A subset should be made for that.
 
 # Plink map file
-1. chromosome (1-22, X, Y or 0 if unplaced)
+1. chromosome (1-29, X, Y or 0 if unplaced)
 2. rs# or snp identifier
 3. Genetic distance (morgans)
 4. Base-pair position (bp units)
 """
 function prepare_maps()
+    cd(work_dir)
     tdir = "data/maps/origin"
     isdir(tdir) || mkdir(tdir)
-    
-    print_sst("Extract Name, Chr, Mapinfo columns from the Illumina 777k mnft")
-    ifile, ofile = ["data/maps/illumina/hd-mnft.csv", "$tdir/v7.map"]
-    buffer = readlines(ifile)
-    nsnp = parse(Int, split(buffer[6], ',')[2])
-    open(ofile, "w") do io      # this will overwrite the file anyway
-        for i in 9:(8 + nsnp)
-            line = buffer[i]
-            name, chr, bp = [split(line, ',')[k] for k in [2, 10, 11]]
-            write(io, join([name, chr, bp], '\t'))
-            write(io, '\n')
-        end
-    end
-    println("777k data written to $ofile\n")
 
-    print_sst("Extract Name, Chr, Mapinfo columns from the Illumina 50k v1")
-    ifile, ofile = ["data/maps/illumina/cow.50k.v1.tsv", "$tdir/v1.map"]
-    buffer = readlines(ifile)
-    open(ofile, "w") do io
-        for i in 2:length(buffer)
-            line = buffer[i]
-            name, chr, bp = [split(line, '\t')[k] for k in [14, 12, 13]]
-            write(io, join([name, chr, bp], '\t'))
-            write(io, '\n')
+    title("Prepare 7 maps for downstream analsis")
+    item("Extract Name, Chr, Mapinfo columns from the Illumina 777k mnft")
+    open("$tdir/v7.map", "w") do v7
+        open("data/maps/illumina/hd-mnft.csv", "r") do io
+            nsnp = 0
+            for line in eachline(io) # read total number of SNP
+                if occursin("Loci Count", line)
+                    nsnp = parse(Int, split(line, ',')[2])
+                    break
+                end
+            end
+            for line in eachline(io) # skip header
+                occursin("IlmnID", line) && break
+            end
+            for _ in 1:nsnp
+                line = readline(io)
+                name, chr, bp = [split(line, ',')[k] for k in [2, 10, 11]]
+                write(v7, join([name, chr, bp], '\t'), '\n')
+            end
         end
     end
-    println("50k v1 data written to $ofile\n")
-    
-    print_sst("Extract Name, Chr, Mapinfo columns from the Illumina 50k v2")
-    ifile, ofile = ["data/maps/illumina/cow.50k.v2.tsv", "$tdir/v2.map"]
-    buffer = readlines(ifile)
-    open(ofile, "w") do io
-        for i in 2:length(buffer)
-            line = buffer[i]
-            name, chr, bp = [split(line, '\t')[k] for k in [14, 12, 13]]
-            write(io, join([name, chr, bp], '\t'))
-            write(io, '\n')
-        end
-    end
-    println("50k v2 data written to $ofile\n")
-    
-    print_sst("Extract Name, Chr, Mapinfo columns from the Illumina 50k v3")
-    ifile, ofile = ["data/maps/illumina/BovineSNP50_v3_A2.csv", "$tdir/v3.map"]
-    buffer = readlines(ifile)
-    nsnp = parse(Int, split(buffer[6], ',')[2])
-    open(ofile, "w") do io
-        for i in 9:(8 + nsnp)
-            line = buffer[i]
-            name, chr, bp = [split(line, ',')[k] for k in [2, 10, 11]]
-            write(io, join([name, chr, bp], '\t'))
-            write(io, '\n')
-        end
-    end
-    println("50k v3 data written to $ofile\n")
+    done()
 
-    print_sst("Make soft links of 3 Dutch maps")
+    item("Extract Name, Chr, Mapinfo columns from the Illumina 54k v1")
+    open("$tdir/v1.map", "w") do v1
+        open("data/maps/illumina/cow.50k.v1.tsv", "r") do io
+            _ = readline(io)
+            for line in eachline(io)
+                name, chr, bp = [split(line, '\t')[k] for k in [14, 12, 13]]
+                write(v1, join([name, chr, bp], '\t'), '\n')
+            end
+        end
+    end
+    done()
+    
+    item("Extract Name, Chr, Mapinfo columns from the Illumina 50k v2")
+    open("$tdir/v2.map", "w") do v2
+        open("data/maps/illumina/cow.50k.v2.tsv", "r") do io
+            _ = readline(io)
+            for line in eachline(io)
+                name, chr, bp = [split(line, '\t')[k] for k in [14, 12, 13]]
+                write(v2, join([name, chr, bp], '\t'), '\n')
+            end
+        end
+    end
+    done()
+    
+    item("Extract Name, Chr, Mapinfo columns from the Illumina 50k v3")
+    open("$tdir/v3.map", "w") do v3
+        open("data/maps/illumina/BovineSNP50_v3_A2.csv", "r") do io
+            nsnp = 0
+            for line in eachline(io) # read total number of SNP
+                if occursin("Loci Count", line)
+                    nsnp = parse(Int, split(line, ',')[2])
+                    break
+                end
+            end
+            for line in eachline(io) # skip header
+                occursin("IlmnID", line) && break
+            end
+            for _ in 1:nsnp
+                line = readline(io)
+                name, chr, bp = [split(line, ',')[k] for k in [2, 10, 11]]
+                write(v3, join([name, chr, bp], '\t'), '\n')
+            end
+        end
+    end
+    done()
+
+    item("Make soft links of 3 Dutch maps")
     dir = pwd()
     cd(tdir)
+    for file in ["d1", "d2", "d3"]
+        isfile("$file.map") && rm("$file.map")
+    end
     symlink("../dutch-ld/10690.map", "d1.map")
     symlink("../dutch-ld/10993.map", "d2.map")
     symlink("../dutch-ld/11483.map", "d3.map")
-    cd(dir)
+    cd(work_dir)
 end
 
 """
@@ -99,11 +118,13 @@ end
 This function read `v3.map` in `data/maps/origin` as dictionary. Then update the rest with this dictionary.
 """
 function update_maps()
+    cd(work_dir)
     sdir = "data/maps/origin"
     tdir = "data/maps/updated"
     isdir(tdir) || mkdir(tdir)
 
-    print_sst("v3.map")
+    title("Update d1-3, v1, v2, and v7 with v3.map")
+    item("v3.map")
     dic = Dict()
     for line in eachline("$sdir/v3.map")
         snp, chr, bp = split(line)
@@ -112,7 +133,7 @@ function update_maps()
     cp("$sdir/v3.map", "$tdir/v3.map", force=true)
 
     for ver in ["d1", "d2", "d3", "v1", "v2", "v7"]
-        print_sst("$ver.map")
+        item("$ver.map")
         target = open("$tdir/$ver.map", "w")
         for line in eachline("$sdir/$ver.map")
             snp, chr, bp = split(line)
@@ -122,5 +143,6 @@ function update_maps()
                 write(target, line, '\n')
             end
         end
+        done()
     end
 end

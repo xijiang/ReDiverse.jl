@@ -1,3 +1,27 @@
+##################################################
+"""
+    ref_map_dict(fmap::String)
+---
+This create a dictionary of SNP -> [chr, bp] and return it
+
+# Notes
+1. chromosome
+2. SNP-name
+3. linkage distance, can be 0
+4. base pari position
+"""
+function ref_map_dict(fmap)     # fmap: the physical map
+    snpdic = Dict()
+    open(fmap, "r") do io
+        while !eof(io)
+            snp, chr, bp = split(readline(io))
+            snpdic[snp] = [chr, bp]
+        end
+    end
+
+    return snpdic
+end
+
 ################################################################################
 """
     fr2ped(dir, list, ped, allele)
@@ -45,6 +69,11 @@ function fr2ped(dir::AbstractString,
                 x, y = n, n+1
             end
         end
+        n = 1
+        for _ in eachline(io)
+            n += 1
+        end
+        n == nlc || error("Number of SNP available, $n is different from $nlc stated in the header")
     end
     x > 0 || error("Allele $allele designation not found in these final reports")
     print_msg("Genotypes in $allele format are in column $x and $y.\n" *

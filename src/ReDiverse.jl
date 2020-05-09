@@ -29,19 +29,19 @@ isdir("tmp") || mkdir("tmp")
 export sandbox_ReDiverse
 
 include("commonFunc.jl")
-include("prepare-tools.jl")
 include("prepare-maps.jl")
-#include("final-reports-2-ped.jl")
 include("raw-genotype-org.jl")
+
 include("auto-subset.jl")
 include("quality-control.jl")
 include("merge-n-impute.jl")
 
 include("merge-n-filter-gt.jl")
 include("clean-before-impute.jl")
-include("plink-cmd.jl")
+#include("plink-cmd.jl")
 include("makefile.jl")
 include("test-funcs.jl")
+include("prepare-tools.jl")
 
 include("work-flow.jl")         # provides sandbox()
 end # module

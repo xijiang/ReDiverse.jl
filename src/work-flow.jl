@@ -37,7 +37,9 @@ function sandbox_ReDiverse(test::Bool = true)
     
     function debug()
         message("Testing ...")
-        @time orgNorgeGT()
+        list = ["dutch-d1", "dutch-d2", "dutch-d3", "dutch-v2", "dutch-v3",
+                "dutch-v7", "german-v2", "german-v3"]
+        autosome_subset(list)
     end
     
     if test

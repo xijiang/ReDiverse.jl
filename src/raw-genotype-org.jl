@@ -60,7 +60,7 @@ function orgDutchGT()
     
     dir = "data/genotypes/dutch"
     mdr = "data/maps/updated"
-    den = "data/genotypes/step-1.plk/dutch"
+    den = "data/genotypes/step-1.plk"
     isdir(den) || mkdir(den)
 
     for ver in ["d1", "d2", "d3", "v2", "v3", "v7"]
@@ -79,7 +79,6 @@ function orgDutchGT()
         done()
     end
 end
-
 
 """
     orgNorgeGT()
@@ -122,4 +121,42 @@ function orgNorgeGT()
 	#    mkdir_tmp()
 	#    plink_2_vcf("data/genotypes/norge/illumina54k_v2", "tmp/plink")
 	#    vcf_2_plink("tmp/plink.vcf", "data/genotypes/ori.plk/norge-v2")
+end
+
+"""
+    autosome_subset(list)
+---
+Take subset of `bed` in `data/genotypes/step-1.plk/{list}`.
+The subset derived consists the shared SNP between `data/maps/target.snp` and `bed`.
+"""
+function autosome_subset(list)
+    cd(work_dir)
+    empty_dir("tmp")
+    title("Extract autosomal subset")
+    item("Create the target set")
+    target = begin
+        snps = String[]
+        for snp in eachline("data/maps/target.snp")
+            push!(snps, snp)
+        end
+        Set(snps)
+    end
+    done()
+
+    sdir = "data/genotypes/step-1.plk"
+    tdir = "data/genotypes/step-2.plk"
+    isdir(tdir) || mkdir(tdir)
+    for plk in list
+        item("Dealing with $sdir/$plk")
+        open("tmp/sub.snp", "w") do io
+            for line in eachline("$sdir/$plk.bim")
+                snp = split(line)[2]
+                if snp in target
+                    write(io, snp, '\n')
+                end
+            end
+        end
+        extract_bed_subset("$sdir/$plk", "tmp/sub.snp", "$tdir/$plk")
+        done()
+    end
 end

@@ -10,41 +10,49 @@ This function has two nested functions:
 By default, sandbox will call `debug()`. To run `release()`, call `sandbox(true)`.
 """
 function sandbox_ReDiverse(test::Bool = true)
-    function release()
+    cd(work_dir)
+    isdir("tmp") || mkdir("tmp")
+    make()
+
+    dutch = ["d1", "d2", "d3", "v2", "v3", "v7"]
+    german = ["v2", "v3"]
+    norge = []
+    list = ["dutch-" .* dutch; "german-" .* german; "norge-" .* norge]
+    countries = ["dutch", "german"]
+
+    if test
+        message("Testing ...")
+    else
         message("Release version")
         message("Warning: This will overwrite all previous results!!!")
         
         # The workflow
+        #-------------------------------------------------
+        message("Raw data section, ~11 minutes")
         @time prepare_maps()    # v1-3 d1-3 and d7
         @time update_maps() # only update Dutch and German data to 50k-v3
-        @time orgGermanGT() # merge German final reports to plink
         @time orgDutchGT()  # merge Dutch final reports to plink
-        
+        @time orgGermanGT() # merge German final reports to plink
+        warning("Warning: Norwegian data are missing")
         #@time orgNorgeGT()  # waiting for new data.
-        @time auto_subset() # extract autosomal and SNP in target.snp
-        @time update_norge_map() # Norge data formt was in plink
-        @time plot_lmiss_n_hwe()
-        
-        # may run below again for different QC standards
-        @time filter_lowQ_snp(maf = 0.02) # Note: to be decided.
-        @time plot_imiss()
-        @time filter_id(0.1)
-        @time merge_into_3_sets()
+        @time autosome_subset(list)
 
-        # to be tested
-        @time beagle_impute()
-    end
-    
-    function debug()
-        message("Testing ...")
-        list = ["dutch-d1", "dutch-d2", "dutch-d3", "dutch-v2", "dutch-v3",
-                "dutch-v7", "german-v2", "german-v3"]
-        autosome_subset(list)
-    end
-    
-    if test
-        debug()
-    else
-        release()
+        #-------------------------------------------------
+        message("Quality control section, <1 min")
+        @time plot_lmiss_n_hwe(list)
+        @time filter_lowQ_snp(list)
+        @time plot_imiss(list, 0.05)
+        @time filter_id(list, 0.05)
+        #@time find_duplicates() # only need to run once
+        @time remove_duplicates(list)
+        warning("Warning: Norwegian data are missing")
+
+        #-------------------------------------------------
+        message("Imputation section, <1 min")
+        @time merge_by_country("dutch", dutch)
+        @time merge_by_country("german", german)
+        warning("Warning: Norwegian data are missing")
+        @time imputation_with_beagle(countries) # ca 20min.
+        @time println("Remove country specific loci")
     end
 end

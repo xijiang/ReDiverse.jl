@@ -26,7 +26,7 @@ function orgGermanGT()
     for ver in ["v2", "v3"]
         title("Dealing with the German data in $dir/$ver")
         list = readdir("$dir/$ver")
-        fr2ped("$dir/$ver", list, "tmp/plink.ped") # default acquire "AB" results
+        fr2ped("$dir/$ver", list, "tmp/plink.ped", "Top") # default acquire "AB" results
 
         item("Creating a SNP dictionary with $mdr/$ver.map")
         dic = ref_map_dict("$mdr/$ver.map")
@@ -66,7 +66,7 @@ function orgDutchGT()
     for ver in ["d1", "d2", "d3", "v2", "v3", "v7"]
         title("Dealing with the Dutch data in $dir/$ver")
         list = readdir("$dir/$ver")
-        fr2ped("$dir/$ver", list, "tmp/plink.ped")
+        fr2ped("$dir/$ver", list, "tmp/plink.ped", "Top")
 
         item("Creating a SNP dictionary with $mdr/$ver.map")
         dic = ref_map_dict("$mdr/$ver.map")
@@ -136,8 +136,10 @@ function autosome_subset(list)
     item("Create the target set")
     target = begin
         snps = String[]
-        for snp in eachline("data/maps/target.snp")
-            push!(snps, snp)
+        p = r"^[1-9][0-9]*$"
+        for line in eachline("data/maps/updated/v3.map")
+            snp, chr, bp = split(line)
+            match(p, chr) === nothing || push!(snps, snp)
         end
         Set(snps)
     end
@@ -147,16 +149,14 @@ function autosome_subset(list)
     tdir = "data/genotypes/step-2.plk"
     isdir(tdir) || mkdir(tdir)
     for plk in list
-        item("Dealing with $sdir/$plk")
+        item("Dealing with '$sdir/$plk'")
         open("tmp/sub.snp", "w") do io
             for line in eachline("$sdir/$plk.bim")
                 snp = split(line)[2]
-                if snp in target
-                    write(io, snp, '\n')
-                end
+                ∈(snp, target) && write(io, snp, '\n')
             end
         end
-        extract_bed_subset("$sdir/$plk", "tmp/sub.snp", "$tdir/$plk")
+        bed_snp_subset("$sdir/$plk", "tmp/sub.snp", "$tdir/$plk")
         done()
     end
 end

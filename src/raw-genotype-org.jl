@@ -26,7 +26,7 @@ function orgGermanGT()
     for ver in ["v2", "v3"]
         title("Dealing with the German data in $dir/$ver")
         list = readdir("$dir/$ver")
-        fr2ped("$dir/$ver", list, "tmp/plink.ped", "Top") # default acquire "AB" results
+        fr2ped("$dir/$ver", list, "tmp/plink.ped", "Top")
 
         item("Creating a SNP dictionary with $mdr/$ver.map")
         dic = ref_map_dict("$mdr/$ver.map")
@@ -81,49 +81,6 @@ function orgDutchGT()
 end
 
 """
-    orgNorgeGT()
----
-This is to mange Norwegian genotype data. Since the data were already in plink format, I just make
-some soft links to `data/plink`
-
-## Notes:
-- Platform V2 needs special treatment
-- It was converted to VCF format, and then converted to bed format again
-  - to circumvent some HWE problem
-- Need to find ou the reason later.
-"""
-function orgNorgeGT()
-    title("About Norwegian data")
-    message("Waiting data in final report from Arne")
-	#    src = ["illumina54k_v1.bed",
-	#           "illumina54k_v1.bim",
-	#           "illumina54k_v1.fam",
-	#           "illumina777k.bed",
-	#           "illumina777k.bim",
-	#           "illumina777k.fam"]
-	#    den = ["norge-v1.bed",
-	#           "norge-v1.bim",
-	#           "norge-v1.fam",
-	#           "norge-v7.bed",
-	#           "norge-v7.bim",
-	#           "norge-v7.fam"]
-	#    
-	#    print_sst("Make soft links of Norwegian genotypes to genotypes/ori.plk")
-	#    dir = pwd()
-	#    cd("data/genotypes/ori.plk")
-	#    for i in 1:length(src)
-	#        a, b = [src den][i, :]
-	#        isfile(b) && rm(b)
-	#        symlink("../norge/$a", b)
-	#    end
-	#    cd(dir)
-	#
-	#    mkdir_tmp()
-	#    plink_2_vcf("data/genotypes/norge/illumina54k_v2", "tmp/plink")
-	#    vcf_2_plink("tmp/plink.vcf", "data/genotypes/ori.plk/norge-v2")
-end
-
-"""
     autosome_subset(list)
 ---
 Take subset of `bed` in `data/genotypes/step-1.plk/{list}`.
@@ -159,4 +116,15 @@ function autosome_subset(list)
         bed_snp_subset("$sdir/$plk", "tmp/sub.snp", "$tdir/$plk")
         done()
     end
+end
+
+"""
+    orgDustbin()
+---
+Only to store codes I wrote that might be used later.
+"""
+function recycle_bin()
+    message("Codes were posted after return\n" *
+            "Check the function codes if they can be reused.")
+    return
 end

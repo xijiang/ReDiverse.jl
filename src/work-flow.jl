@@ -22,6 +22,7 @@ function sandbox_ReDiverse(test::Bool = true)
 
     if test
         message("Testing ...")
+        orgNorgeGT()
     else
         message("Release version")
         message("Warning: This will overwrite all previous results!!!")

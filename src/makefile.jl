@@ -9,7 +9,9 @@ function make()
     title("C++ binaries")
     isdir("bin") || mkdir("bin")
     bins = ["find-dup",
-            "merge-dup"]
+            "merge-dup",
+            "split-h",
+            "split-v"]
     for bin in bins
         if (!isfile("bin/$bin")) || (stat("bin/$bin").mtime < stat("src/$bin.cpp").mtime)
             print("g++ -O2 -Wall -o bin/$bin src/$bin.cpp")

@@ -16,16 +16,16 @@ function sandbox_ReDiverse(test::Bool = true)
 
     dutch = ["d1", "d2", "d3", "v2", "v3", "v7"]
     german = ["v2", "v3"]
-    norge = []
+    norge = ["v1", "v2", "v7"]
     list = ["dutch-" .* dutch; "german-" .* german; "norge-" .* norge]
-    countries = ["dutch", "german"]
+    countries = ["dutch", "german", "norge"]
 
     if test
         message("Testing ...")
-        orgNorgeGT()
     else
         message("Release version")
-        message("Warning: This will overwrite all previous results!!!")
+        warning("Warning: This will overwrite all previous results!!!")
+        warning("Warning: This will take several hours to finish")
         
         # The workflow
         #-------------------------------------------------
@@ -34,8 +34,7 @@ function sandbox_ReDiverse(test::Bool = true)
         @time update_maps() # only update Dutch and German data to 50k-v3
         @time orgDutchGT()  # merge Dutch final reports to plink
         @time orgGermanGT() # merge German final reports to plink
-        warning("Warning: Norwegian data are missing")
-        #@time orgNorgeGT()  # waiting for new data.
+        @time orgNorgeGT()  # done on 2020-May-19
         @time autosome_subset(list)
 
         #-------------------------------------------------
@@ -46,14 +45,13 @@ function sandbox_ReDiverse(test::Bool = true)
         @time filter_id(list, 0.05)
         #@time find_duplicates() # only need to run once
         @time remove_duplicates(list)
-        warning("Warning: Norwegian data are missing")
 
         #-------------------------------------------------
         message("Imputation section, <1 min")
         @time merge_by_country("dutch", dutch)
         @time merge_by_country("german", german)
-        warning("Warning: Norwegian data are missing")
-        @time imputation_with_beagle(countries) # ca 20min.
+        @time merge_by_country("norge", norge)
+        @time imputation_with_beagle(countries) # ca 20min (D+G) + 37min (N)
         @time println("Remove country specific loci")
     end
 end

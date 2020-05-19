@@ -7,6 +7,7 @@ But thic can also be run after new C++ codes were written.
 """
 function make()
     title("C++ binaries")
+    cd(work_dir)
     isdir("bin") || mkdir("bin")
     bins = ["find-dup",
             "merge-dup",

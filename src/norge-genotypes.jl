@@ -1,117 +1,147 @@
 """
-    split_h(file, ref.map, out)
+    cvt_2_plk_n_rm_id()
 ---
-Split the one final report `file` that consist more than one ID in one column.
-Then use my other procedures to merge them to plink `out`.
+Convert Norwegian final reports to plink format. Also remove ID who were genotyped more than once.
+The ID duplicates who were
+- of low density genotype
+- genotyped earlier
+
+were removed in above precedure order.
 """
-function split_h(file::AbstractString,
-                  dic,
-                  out::AbstractString)
-    cd(work_dir)
-    empty_dir("tmp")
-    cd("tmp")
-    _ = read(pipeline(`cat $work_dir/$file`,
-                      `$work_dir/bin/split-h`),
-             String)
-    cd(work_dir)
-    list = readdir("tmp")       # the newly created files
-    fr2ped("tmp", list, "tmp/plink.ped", "Top")
-    sample = list[1]
-    create_plink_map("tmp/$sample", dic, "tmp/plink.map")
-    ped_n_map_to_bed("tmp/plink.ped", "tmp/plink.map", out);
+function cvt_2_plk_n_rm_id()
+    title("Norwegian raw data")
+    #############################
+    
+    tmp = joinpath(work_dir, "tmp")
+    fra = joinpath(work_dir, "data/genotypes/norge")
+    til = joinpath(work_dir, "data/genotypes/step-0.plk") # convert to plink and rm ID first
+    isdir(til) || mkdir(til)
+    empty_dir(til)
+
+
+    dat = joinpath(fra, "2020-05-11") # where are the 86 files
+    ver = "ver"                       # v7, v2, v1, v0
+
+    dic = Dict()
+
+    open(joinpath(fra, "file.desc"), "r") do desc
+        _ = readline(desc)      # I defined a header to remember contents.
+        for line in eachline(desc)
+            nn, vv, _, ff = split(line) # number, version, date, file-name
+            subtitle(ff)
+            #-------------
+            
+            nc = 0                       # number of columns in ff
+            
+            if vv ≠ ver                  # Read map dictionary
+                ver = vv
+                empty!(dic)
+                item("Read map $ver")
+                dic = ref_map_dict(joinpath(work_dir, "data/maps/updated", "$vv.map"))
+            end
+
+            item("Create a GenofileId to GenoId shortlist dictionary")
+            sdc = joinpath(til, "$nn.dic")
+            open(sdc, "w") do io # output shortlist.
+                for line in eachline(joinpath(fra, "idmap_rediverse"))
+                    f, x, y = [split(line)[i] for i in [2, 3, 4]]
+                    if f == ff
+                        write(io, "$x\t$y\n")
+                    end
+                end
+            end
+            
+            open(joinpath(fra, "2020-05-11", ff), "r") do io
+                for _ in 1:20   # to get into the body
+                    line = readline(io)
+                end
+                nc = length(split(line))
+            end                 # determin whether to split v or h.
+            
+            empty_dir(tmp)
+            file = joinpath(dat, ff)
+            cd(tmp)
+            if nc >10           # split vertically
+                item("Split file $ff vertically")
+                _ = read(pipeline(`cat $file`,
+                                  `$work_dir/bin/split-v $sdc`),
+                         String)
+            else                # split horizonly
+                item("Split file $ff horizonly")
+                _ = read(pipeline(`cat $file`,
+                                  `$work_dir/bin/split-h $sdc`),
+                         String)
+            end
+            cd(work_dir)
+            list = readdir(tmp)         # the newly created files
+            fr2ped(tmp, list, joinpath(tmp, "plink.ped"), "Top")
+            sample = list[1]
+            create_plink_map(joinpath(tmp, sample), dic, joinpath(tmp, "plink.map"))
+            ped_n_map_to_bed(joinpath(tmp, "plink.ped"), joinpath(tmp, "plink.map"), joinpath(til, nn));
+        end
+    end
 end
 
 """
-    split_v(file, ref.map, out)
+    merge_raw_norge_gt()
 ---
-Split the one final report `file` that consist more than one ID in one row.
-Then use my other procedures to merge them to plink `out`.
+Merge the data converted by `cvt_2_plk_n_rm_id` into v0, 1, 2, 7 four files.
 """
-function split_v(file::AbstractString,
-                 dic,
-                 out::AbstractString)
-    cd(work_dir)
-    empty_dir("tmp")
-    cd("tmp")
-    _ = read(pipeline(`cat $work_dir/$file`,
-                      `$work_dir/bin/split-v`),
-             String)
-    cd(work_dir)
-    list = readdir("tmp")
-    fr2ped("tmp", list, "tmp/plink.ped", "Top")
-    sample = list[1]
-    create_plink_map("tmp/$sample", dic, "tmp/plink.map")
-    ped_n_map_to_bed("tmp/plink.ped", "tmp/plink.map", out)
+function merge_raw_norge_gt()
+    title("Merge Norwegian data")
+    fra = joinpath(work_dir, "data/genotypes/step-0.plk")
+    mid = joinpath(work_dir, "tmp")
+    til = joinpath(work_dir, "data/genotypes/step-1.plk")
+    isdir(til) || mkdir(til)
+
+    v7 = "0".*[string(i) for i in 1:9]
+    v2 = [string(i) for i in 10:84]
+    v1 = ["85"]
+    v0 = ["86"]
+    tt = ["v7", "v2", "v1"]
+    it = 1
+    
+    ID = Set()                  # ID already dealed
+    for vv in [v7, v2, v1]      # v0 was removed as they were all genotyped again later.
+        target = tt[it]
+        subtitle("Dealing with platform $target")
+        empty_dir(mid)
+        for s in vv
+            open(joinpath(mid, "list"), "w") do list
+                for line in eachline(joinpath(fra, "$s.fam"))
+                    id = split(line)[2]
+                    if id ∉ ID
+                        push!(ID, id)
+                        write(list, "dummy $id\n")
+                    end
+                end
+            end                 # created keep ID list
+            plink_keep_id(joinpath(fra, s),
+                          joinpath(mid, "list"),
+                          joinpath(mid, s)
+                          )
+        end
+        open(joinpath(mid, "merge.lst"), "w") do list
+            for s in vv
+                write(list, joinpath(mid, s), '\n')
+            end
+        end
+        merge_beds(joinpath(mid, "merge.lst"),
+                   joinpath(til, "norge-$target")
+                   )
+        it += 1
+    end
 end
 
 """
     orgNorgeGT()
 ---
-This is to mange Norwegian genotype data. Since the data were already in plink format, I just make
-some soft links to `data/plink`
-
-## Notes:
-- Platform V2 needs special treatment
-- It was converted to VCF format, and then converted to bed format again
-  - to circumvent some HWE problem
-- Need to find ou the reason later.
-
-## Steps:
-
-1. Merged final reports to plink.ped, using Top fields. Chromosome and bp info updated with 𝑣3
-2. Removed non-autosomal SNP. Only loci on chr 1-29 left, according to 𝑣−3
-3. Filtered loci of geno<0.9, maf<0.01, 𝑃hwe<10−4
-4. Filtered ID with mind<0.95.
-5. Removed dupicated loci.
-6. Merged all platforms into 3 country sets.
-7. Imputed results.
-8. Remove country specific loci, and ready for 𝐆-matrix.
+Organize raw Norwegian data into step-1.plk.  Namely v0, v1, v2, v7.
 """
 function orgNorgeGT()
-    title("About Norwegian data")
-
-    item("Platform v1")
-    cd(work_dir)
-    fra = "data/genotypes/norge/v1"
-    # remember to remove some ID
-    # dic = ref_map_dict("data/maps/updated/v1.map")
-    # split_h("$fra/FinalReport_54kV1_apr2009_ed1.txt", dic, "tmp/a")
-    # split_h("$fra/FinalReport_54kV1_ed1.txt", dic, "tmp/a")
-
-    item("Platform v2")
-    cd(work_dir)
-    fra = "data/genotypes/norge/v2"
-    dic = ref_map_dict("data/maps/updated/v2.map")
-    # split_v("$fra/151119_Geno_uttak3634_fillin3528_week47.txt", dic, "tmp/a")
-    # split_h("$fra/151126_Geno_uttak_3664_fillin_3528_FinalReport_Standard.txt", dic, "tmp/a")
-    # split_h("$fra/151210_Geno_uttak3692_fillin_3528_4samples3634_FinalReport_Geno-GS.txt", dic, "tmp/a")
-    # split_h("$fra/151216_Geno_uttak3713_fillin_3528_3715_week51_FinalReport_Geno_GS.txt", dic, "tmp/a")
-    # split_h("$fra/160115_Geno_3738_fillin_FinalReport_TN_Geno_GS.txt", dic, "tmp/a")
-    # split_h("$fra/160127_Geno_uttak3771_fillin3715_week04_FinalReport_Geno_GS.txt", dic, "tmp/a")
-    # split_h("$fra/160211_Geno_uttak3793_fillin3715_FinalReport_Geno_GS.txt", dic, "tmp/a")
-    # split_h("$fra/160225_Geno_uttak_3817_pl1-2_fillin_3715_3809_FinalReport_Geno_GS.txt", dic, "tmp/a")
-    # split_h("$fra/160310_Geno_uttak3848_fillin3809_week10_72samples_FinalReport_Geno_GS.txt", dic, "tmp/a")
-    # split_h("$fra/160310_Geno_uttak3848_fillin3809_week10_raw_23samples_chip80_FinalReport_Geno_GS.txt", dic, "tmp/a")
-    # for i in 1:5
-    #     split_v("$fra/FinalReport_54kV2_collection2.txt.$i", dic, "tmp/a")
-    # end
-    # for i in 1:56
-    #     split_v("$fra/FinalReport_54kV2_collection_ed1.txt.$i", dic, "tmp/a")
-    # end
-    # split_h("$fra/FinalReport_54kV2_ed1.txt", dic, "tmp/a")
-    # split_h("$fra/FinalReport_54kV2_feb2011_ed1.txt", dic, "tmp/a")
-    # split_h("$fra/FinalReport_54kV2_genoskan.txt", dic, "tmp/a")
-    # split_v("$fra/FinalReport_54kV2_nov2011_ed1.txt", dic, "tmp/a")
+    # Step-0: convert final report to plink, and translate GenofileId to GenoId.
+    @time cvt_2_plk_n_rm_id()
+    # Step-1: merge to v7, 2, 1, 0 four files, remove dup ID plink by plink
+    # ID in v0 were all genotyped again later, so not included.
+    @time merge_raw_norge_gt()
 end
-#=
-     1  170126_Geno_uttak_4352_777K_autoclustered_FinalReport.txt
-     2  171025_HG_BovineHD_plate1-5_FinalReport_GenoGS.txt
-     3  171107_Geno_BovineHD_uttak4818_FinalReport_matrix.txt
-     4  180317_Geno777_uttak5097_96samples_Geno-cluster_FinalReport.txt
-     5  181119_Geno777_uttak5526_96samples_FinalReport_Geno-cluster.txt
-     6  FinalReport_777k_apr2015.txt
-     7  FinalReport_777k_jan2015.txt
-     8  FinalReport_777k_jun2015.txt
-     9  FinalReport_777k.txt
-Also check the 0.9291 problem. It must be a problem from split-v.cpp.
-=#

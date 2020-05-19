@@ -12,13 +12,15 @@ plink_2_vcf       = ABG.plink_2_vcf
 plink_filter_id   = ABG.plink_filter_id
 plink_filter_snp  = ABG.plink_filter_snp
 vcf_2_plink       = ABG.vcf_2_plink
+plink_keep_id     = ABG.plink_keep_id
 
 # styled printing
-title   = ABG.title
-item    = ABG.item
-message = ABG.message
-warning = ABG.warning
-done    = ABG.done
+title    = ABG.title
+subtitle = ABG.subtitle
+item     = ABG.item
+message  = ABG.message
+warning  = ABG.warning
+done     = ABG.done
 
 # miscs
 empty_dir = ABG.empty_dir

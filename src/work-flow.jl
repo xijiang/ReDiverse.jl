@@ -22,6 +22,7 @@ function sandbox_ReDiverse(test::Bool = true)
 
     if test
         message("Testing ...")
+        @time rm_country_specific_snp()
     else
         message("Release version")
         warning("Warning: This will overwrite all previous results!!!")

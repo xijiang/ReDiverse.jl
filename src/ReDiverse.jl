@@ -12,7 +12,7 @@ A package to organize and analysis ReDiverse data. Below are the `ToDo`s
 1. Genotype collection, and convert to `plink` format.
 2. [x] Genotype data clean
 3. [x] Determine of SNP chip platforms, and final SNP set.
-4. Imputation
+4. [x] Imputation → multi-breed GRM
 5. GBLUP
 6. Cross-validation strategy
 
@@ -34,6 +34,7 @@ include("norge-genotypes.jl")
 include("quality-control.jl")
 include("makefile.jl")
 include("imputation.jl")
+include("calc-grm.jl")
 
 include("work-flow.jl")
 

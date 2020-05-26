@@ -1,7 +1,7 @@
 name = "ReDiverse"
 uuid = "3955ef1e-a3c5-4a6e-afd8-9ba03e5c0c85"
 authors = ["Xijiang Yu <xijiang@users.noreply.github.com>"]
-version = "0.5.1"
+version = "0.5.2"
 
 [deps]
 ABG = "6f4575a6-10e7-48b2-be77-2501b81e0c82"

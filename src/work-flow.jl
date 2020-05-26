@@ -22,7 +22,7 @@ function sandbox_ReDiverse(test::Bool = true)
 
     if test
         message("Testing ...")
-        @time rm_country_specific_snp()
+        @time calc_grm()
     else
         message("Release version")
         warning("Warning: This will overwrite all previous results!!!")
@@ -48,11 +48,12 @@ function sandbox_ReDiverse(test::Bool = true)
         @time remove_duplicates(list)
 
         #-------------------------------------------------
-        message("Imputation section, <1 min")
+        message("Merge for imputation section, <1 min")
         @time merge_by_country("dutch", dutch)
         @time merge_by_country("german", german)
         @time merge_by_country("norge", norge)
+        message("Imputation, ca 1hr")
         @time imputation_with_beagle(countries) # ca 20min (D+G) + 37min (N)
-        @time println("Remove country specific loci")
+        @time rm_country_specific_snp()
     end
 end

@@ -9,14 +9,16 @@ function make()
     title("C++ binaries")
     cd(work_dir)
     isdir("bin") || mkdir("bin")
+    cpp = "cpp"
     bins = ["find-dup",
             "merge-dup",
             "split-h",
-            "split-v"]
+            "split-v",
+            "merge4grm"]
     for bin in bins
-        if (!isfile("bin/$bin")) || (stat("bin/$bin").mtime < stat("src/$bin.cpp").mtime)
-            print("g++ -O2 -Wall -o bin/$bin src/$bin.cpp")
-            run(`g++ -O2 -Wall -o bin/$bin src/$bin.cpp`)
+        if (!isfile("bin/$bin")) || (stat("bin/$bin").mtime < stat("$cpp/$bin.cpp").mtime)
+            print("g++ -O2 -Wall -o bin/$bin $cpp/$bin.cpp")
+            run(`g++ -O2 -Wall -o bin/$bin $cpp/$bin.cpp`)
             done()
         else
             print("bin/$bin")

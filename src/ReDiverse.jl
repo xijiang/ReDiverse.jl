@@ -18,7 +18,8 @@ A package to organize and analysis ReDiverse data. Below are the `ToDo`s
 
 """
 module ReDiverse
-using Plots, Plots.Measures, LaTeXStrings, Test, Printf, ABG
+using Plots, Plots.Measures, LaTeXStrings, Test, Printf, DataFrames, CSV
+using Statistics, LinearAlgebra
 ################################################################################
 
 export sandbox_ReDiverse
@@ -26,15 +27,16 @@ export sandbox_ReDiverse
 work_dir = pwd()                # all dirs are relative to work_dir
 beagle = "bin/beagle.jar"
 
-include("abg-cmds.jl")
 include("commonFunc.jl")
-include("prepare-maps.jl")
-include("raw-genotype-org.jl")
-include("norge-genotypes.jl")
-include("quality-control.jl")
-include("makefile.jl")
+include("genotype/prepare-maps.jl")
+include("genotype/raw-genotype-org.jl")
+include("genotype/norsk-genotypes.jl")
+include("genotype/quality-control.jl")
 include("imputation.jl")
 include("calc-grm.jl")
+include("check-grm.jl")
+include("utils/abg-cmds.jl")
+include("utils/makefile.jl")
 
 include("work-flow.jl")
 

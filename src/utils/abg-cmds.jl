@@ -1,4 +1,6 @@
 # plink related commands
+using ABG
+
 plink             = "$work_dir/bin/plink"
 allele_maf_stats  = ABG.allele_maf_stats
 bed_2_map_n_ped   = ABG.bed_2_map_n_ped

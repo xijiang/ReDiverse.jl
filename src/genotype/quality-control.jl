@@ -1,3 +1,5 @@
+using Plots, Plots.Measures
+
 """
     plot_lmiss_n_hwe(list)
 ---

@@ -127,7 +127,7 @@ end
 """
     plot_grm_diag()
 ---
-QQ-plot of `GRM` diagonals.
+Sort and plot diagonals of `GRM`.
 """
 function plot_grm_diag()
     title("QQ-Plot GRM diagonals")
@@ -147,3 +147,48 @@ function plot_grm_diag()
 end
 
                 
+"""
+    check_abnormal_elements()
+---
+# Issues
+- dv_2 has very high diagonals, treat them as a separate breed.
+"""
+function check_abnormal_elements()
+    title("Check dv_2")
+    fra = joinpath(work_dir, "data/genotypes/grm/all")
+    til = joinpath(work_dir, "data/genotypes/grm/378")
+    isdir(til) || mkdir(til)
+    gt = joinpath(til, "genotypes.txt")
+    isfile(gt) || symlink(joinpath(til, "genotypes.txt"), gt)
+    
+    idx = open(joinpath(til, "country.idx",), "w")
+    open(joinpath(fra, "country.idx"), "r") do io
+        for _ in 1:378
+            line = readline(io)
+            write(idx, line, " 0\n")
+        end
+        for line in eachline(io)
+            id, b, c, d = split(line)
+            write(idx, "$id 0 $b $c $d\n")
+        end
+    end
+    close(idx)
+    open(joinpath(til, "calc_grm.inp"), "w") do io
+        write(io, join([
+            "44037",
+            "genotypes.txt",
+            "genotypes",
+            "4 country.idx",
+            "vanraden",
+            "giv 0.00",
+            "G ASReml",
+            "print_giv=asc",
+            "print_geno=no genotypes.dat",
+            "12"], '\n'))
+    end
+
+    cd(til)
+    _ = run(`calc_grm`)
+    _ = read(run(pipeline("G.grm", `gawk '{if($1==$2) print $3}'`, "diag.txt")), String)
+    cd(work_dir)
+end

@@ -117,14 +117,3 @@ function autosome_subset(list)
         done()
     end
 end
-
-"""
-    orgDustbin()
----
-Only to store codes I wrote that might be used later.
-"""
-function recycle_bin()
-    message("Codes were posted after return\n" *
-            "Check the function codes if they can be reused.")
-    return
-end

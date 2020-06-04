@@ -14,7 +14,9 @@ function make()
             "merge-dup",
             "split-h",
             "split-v",
-            "merge4grm"]
+            "merge4grm",
+            "pedsort",
+            "merge-ped"]
     for bin in bins
         if (!isfile("bin/$bin")) || (stat("bin/$bin").mtime < stat("$cpp/$bin.cpp").mtime)
             print("g++ -O2 -Wall -o bin/$bin $cpp/$bin.cpp")

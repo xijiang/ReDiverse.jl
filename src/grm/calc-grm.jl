@@ -146,49 +146,156 @@ function plot_grm_diag()
     savefig("notebooks/fig/diag.png")
 end
 
-                
 """
-    check_abnormal_elements()
+    calc_grm_w_ped()
 ---
-# Issues
-- dv_2 has very high diagonals, treat them as a separate breed.
+Previously the elements in Dutch and Norwegian block are weird.  This funciton tries to bend the results
+toward the **A** matrix, to see if the problem is alieved or not.
 """
-function check_abnormal_elements()
-    title("Check dv_2")
-    fra = joinpath(work_dir, "data/genotypes/grm/all")
-    til = joinpath(work_dir, "data/genotypes/grm/378")
-    isdir(til) || mkdir(til)
-    gt = joinpath(til, "genotypes.txt")
-    isfile(gt) || symlink(joinpath(til, "genotypes.txt"), gt)
+function calc_grm_w_ped()
+    title("Calculate GRM with pedigree")
+    item("Prepare directories")
+    countries = ["dutch", "german", "norge"]
+    cd(work_dir)
+    fra = joinpath(work_dir, "data/genotypes/step-8.plk")
+    tmp = joinpath(work_dir, "tmp")
+    bin = joinpath(work_dir, "bin")
+    grm = joinpath(work_dir, "data/genotypes/grm")
+    ped = joinpath(work_dir, "data/pedigree")
+    isdir(grm) || mkdir(grm)
+    empty_dir(tmp)
+    done()
+
+    item("Create unified pedigree")
+    run(pipeline(joinpath(ped, "dg.ped"),
+                 `$bin/pedsort UUUUUUUUUUUUUUUUUUU`,
+                 joinpath(tmp, "dg.ped")))
+    run(pipeline(joinpath(ped, "norge.ped"),
+                 `$bin/pedsort 0`,
+                 joinpath(tmp, "norge.ped")))
+    argv = joinpath.(tmp, ["dg.ped", "norge.ped"])
+    run(pipeline(`$bin/merge-ped $argv`, joinpath(tmp,"one.ped")))
+    done()
+
+    item("Convert country.bed to raw data")
+    for country in countries
+        plink_012(joinpath(fra, country), joinpath(tmp, country))
+    end
+    done()
+
+    item("Merge raw data for `calc_grm`")
+    argv = joinpath.(tmp, ["dutch.raw", "german.raw", "norge.raw", "country.idx"])
+    _ = run(pipeline(joinpath(tmp, "one.ped"), `$bin/merge4grm $argv`, joinpath(tmp, "genotypes.txt")))
+    done()
     
-    idx = open(joinpath(til, "country.idx",), "w")
-    open(joinpath(fra, "country.idx"), "r") do io
-        for _ in 1:378
-            line = readline(io)
-            write(idx, line, " 0\n")
-        end
-        for line in eachline(io)
-            id, b, c, d = split(line)
-            write(idx, "$id 0 $b $c $d\n")
+    item("Create a parameter file for `calc_grm`")
+    nlc = begin
+        open(joinpath(tmp, "genotypes.txt"), "r") do gt
+            line = readline(gt)
+            length(split(line)) - 1
         end
     end
-    close(idx)
-    open(joinpath(til, "calc_grm.inp"), "w") do io
-        write(io, join([
-            "44037",
-            "genotypes.txt",
-            "genotypes",
-            "4 country.idx",
-            "vanraden",
-            "giv 0.00",
-            "G ASReml",
-            "print_giv=asc",
-            "print_geno=no genotypes.dat",
-            "12"], '\n'))
+    open(joinpath(tmp, "three.ped"), "w") do ped
+        for line in eachline(joinpath(tmp, "one.ped"))
+            id, pa, ma = split(line)[1:3]
+            write(ped, "$id $pa $ma\n")
+        end
     end
 
-    cd(til)
+    inp = ["$nlc", "genotypes.txt three.ped", "genotypes", "1", "vanraden",
+           "giv 0.00", "G ASReml", "print_giv=asc", "print_geno=no genotypes.dat",
+           "12", "!checkparents", ""]
+    write(joinpath(tmp, "calc_grm.inp"), join(inp, '\n'))
+    done()
+
+    item("Run `calc_grm`")
+    cd(tmp)
     _ = run(`calc_grm`)
-    _ = read(run(pipeline("G.grm", `gawk '{if($1==$2) print $3}'`, "diag.txt")), String)
     cd(work_dir)
 end
+
+"""
+This function create an ID (string) dictionary to (integer).
+- Unknown ID are coded as 0
+- Known ID start from 1
+- ID in sire, dam columns and not in ID column are coded first
+- Country were also recorded as 1, 2, 3 for dutch, german and norge, respectively.
+"""
+function generate_ID_dict()
+    title("generate a ID dictionary of all ID in 3 countries")
+    dic = open(joinpath(work_dir, "data/pedigree/ID.dict"), "w")
+    ped = open(joinpath(work_dir, "data/pedigree/union.ped"), "w")
+    idx = open(joinpath(work_dir, "data/pedigree/country.idx"), "w")
+    ref = Dict()
+    iid = 0
+    
+    write(dic, "UUUUUUUUUUUUUUUUUUU 0 0\n") # an unknown parent
+    write(dic, "0 0 0\n")                   # another unknown parent
+    push!(ref, "UUUUUUUUUUUUUUUUUUU" => 0)
+    push!(ref, "0" => 0)
+    breed = Dict("dutch" => " 1 0 0\n", "german" => " 0 1 0\n", "norge" => " 0 0 1\n")
+
+    for country in ["dutch", "german", "norge"]
+        id, pa, ma = begin
+            a = String[]
+            b = String[]
+            c = String[]
+            fra = joinpath(work_dir, "data/pedigree/$country.ped")
+            for line in eachline(fra)
+                x, y, z = (split(line)[i] for i in [1, 2, 3])
+                push!(a, x)
+                push!(b, y)
+                push!(c, z)
+            end
+            Set(a), delete!(Set(b), "UUUUUUUUUUUUUUUUUUU"), delete!(Set(c), "UUUUUUUUUUUUUUUUUUU")
+        end
+
+        println("N id pa ma in $country: ", length(id), ' ', length(pa), ' ', length(ma))
+        for i in setdiff(union(pa, ma), id)
+            iid += 1
+            write(dic, "$i $iid $country\n")
+            push!(ref, i => iid)
+            write(ped, iid, " 0 0\n")
+            write(idx, iid, breed[country])
+        end
+        for line in eachline(joinpath(work_dir, "data/pedigree/$country.ped"))
+            x, y, z = (split(line)[i] for i in [1, 2, 3])
+            iid += 1
+            push!(ref, x => iid)
+            write(dic, "$x $iid $country\n")
+            write(ped, iid, ' ', ref[y], ' ', ref[z], '\n')
+            write(idx, iid, breed[country])
+        end
+    end
+
+    close(ped, ped, idx)
+    done()
+end
+
+function test_ID()
+    title("Test ID")
+    #til = joinpath
+end
+#= Discarded codes
+    allid = begin
+        id = String[]
+        for x in eachline(joinpath(work_dir, "data/pedigree/ids"))
+            push!(id, x)
+        end
+        Set(id)
+    end
+    for country in ["dutch", "german", "norge"]
+        cid = begin
+            id = String[]
+            for line in eachline(joinpath(work_dir, "data/genotypes/step-8.plk/$country.fam"))
+                push!(id, split(line)[2])
+            end
+            Set(id)
+        end
+        did = setdiff(cid, allid)
+        if length(did) > 0
+            println(country, " has ", length(did), " ID not in the pedigree")
+            write(joinpath(work_dir, "tmp/$country.diff"), join(did, '\n'), '\n')
+        end
+    end
+=#

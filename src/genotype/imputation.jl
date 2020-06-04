@@ -1,3 +1,21 @@
+function update_german_id()
+    item("Update German ID")
+    dic = Dict()
+    for line in eachline(joinpath(work_dir, "data/pedigree/german.ref"))
+        a, b = split(line)
+        dic[a] = b
+    end
+    til = joinpath(work_dir, "data/genotypes/step-8.plk/german.fam")
+    fra = joinpath(work_dir, "tmp/tt")
+    mv(til, fra, force=true)
+    open(til, "w") do io
+        for line in eachline(fra)
+            a, b, c, d, e, f = split(line)
+            write(io, "$a ", dic[b], " $c $d $e $f\n")
+        end
+    end
+end
+
 """
     merge_by_country(country, platform_list)
 ---
@@ -18,6 +36,7 @@ function merge_by_country(country::AbstractString, list)
     end
 
     merge_beds("tmp/merge.lst", "$dto/$country")
+    update_german_id()
     done()
 end
 

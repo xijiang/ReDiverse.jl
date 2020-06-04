@@ -1,5 +1,5 @@
 """
-    sandbox(test::Bool = true)
+  sandbox(test::Bool = true)
 ---
 This function has two nested functions:
 - release()
@@ -12,7 +12,7 @@ By default, sandbox will call `debug()`. To run `release()`, call `sandbox(true)
 function sandbox_ReDiverse(test::Bool = true)
     cd(work_dir)
     isdir("tmp") || mkdir("tmp")
-    make()
+    # make()
 
     dutch = ["d1", "d2", "d3", "v2", "v3", "v7"]
     german = ["v2", "v3"]
@@ -22,14 +22,15 @@ function sandbox_ReDiverse(test::Bool = true)
 
     if test
         message("Testing ...")
-        @time calc_grm()
+        @time generate_ID_dict()
     else
+        title("Organize genotypes")
         message("Release version")
         warning("Warning: This will overwrite all previous results!!!")
         warning("Warning: This will take several hours to finish")
         
         # The workflow
-        #-------------------------------------------------
+        # -------------------------------------------------
         message("Raw data section, ~11 minutes")
         @time prepare_maps()    # v1-3 d1-3 and d7
         @time update_maps() # only update Dutch and German data to 50k-v3
@@ -38,16 +39,16 @@ function sandbox_ReDiverse(test::Bool = true)
         @time orgNorgeGT()  # done on 2020-May-19
         @time autosome_subset(list)
 
-        #-------------------------------------------------
+        # -------------------------------------------------
         message("Quality control section, <1 min")
         @time plot_lmiss_n_hwe(list)
         @time filter_lowQ_snp(list)
         @time plot_imiss(list, 0.05)
         @time filter_id(list, 0.05)
-        #@time find_duplicates() # only need to run once
+        # @time find_duplicates() # only need to run once
         @time remove_duplicates(list)
 
-        #-------------------------------------------------
+        # -------------------------------------------------
         message("Merge for imputation section, <1 min")
         @time merge_by_country("dutch", dutch)
         @time merge_by_country("german", german)
@@ -55,5 +56,8 @@ function sandbox_ReDiverse(test::Bool = true)
         message("Imputation, ca 1hr")
         @time imputation_with_beagle(countries) # ca 20min (D+G) + 37min (N)
         @time rm_country_specific_snp()
+
+        title("GRM related")
+        @time calc_grm()
     end
 end

@@ -7,23 +7,25 @@ But thic can also be run after new C++ codes were written.
 """
 function make()
     title("C++ binaries")
-    cd(work_dir)
-    isdir("bin") || mkdir("bin")
-    cpp = "cpp"
+    isdir(rdBin) || mkdir(rdBin)
     bins = ["find-dup",
             "merge-dup",
             "split-h",
             "split-v",
-            "merge4grm",
+            "raw2gt",
             "pedsort",
             "merge-ped"]
+    width = 60
     for bin in bins
-        if (!isfile("bin/$bin")) || (stat("bin/$bin").mtime < stat("$cpp/$bin.cpp").mtime)
-            print("g++ -O2 -Wall -o bin/$bin $cpp/$bin.cpp")
-            run(`g++ -O2 -Wall -o bin/$bin $cpp/$bin.cpp`)
+        exe = joinpath(rdBin, bin)
+        cpp = joinpath(rdCpp, "$bin.cpp")
+        if !isfile(exe) || stat(exe).mtime < stat(cpp).mtime
+            msg = "g++ -O2 -Wall $bin.cpp -o $bin"
+            print(lpad(msg, width))
+            run(`g++ -O2 -Wall -o $exe $cpp`)
             done()
         else
-            print("bin/$bin")
+            print(lpad(bin, width))
             done("OK")
         end
     end

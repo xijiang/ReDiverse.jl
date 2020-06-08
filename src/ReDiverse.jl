@@ -25,7 +25,15 @@ using Statistics, LinearAlgebra
 
 export sandbox_ReDiverse
 
-work_dir = pwd()                # all dirs are relative to work_dir
+work_dir = pwd()                # all data and results are relative to work_dir
+rdDir = begin                   # package directory
+    t = splitdir(pathof(ReDiverse))[1]
+    l = findlast('/', t) - 1
+    t[1:l]
+end
+rdBin = joinpath(rdDir, "bin")
+rdCpp = joinpath(rdDir, "src/cpp")
+
 beagle = "bin/beagle.jar"
 
 include("work-flow.jl")

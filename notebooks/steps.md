@@ -10,6 +10,7 @@ The genotypes I received were stored in `data/genotypes/{dutch,german,norge}`. T
 - **Step-3.plk**: Filtered loci of geno<0.9, maf<0.01, $P_{\mathrm{hwe}}<10^{-4}$
 - **Step-4.plk**: Filtered ID with mind<0.95.
 - **Step-5.plk**: Removed dupicated loci.
+  - **Step-5.1.plk**: Unify allele order of all platforms
 - **Step-6.plk**: Merged all platforms into 3 country sets.
 - **Step-7.plk**: Imputed results.
 - **Step-8.plk**: Remove country specific loci, and ready for $\mathbf{G}$-matrix.

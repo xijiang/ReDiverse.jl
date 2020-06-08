@@ -8,62 +8,90 @@ function calc_grm()
     title("Calculate cross-country G-matrix")
     cd(work_dir)
     fra = joinpath(work_dir, "data/genotypes/step-8.plk")
+    ped = joinpath(work_dir, "data/pedigree")
     tmp = joinpath(work_dir, "tmp")
-    bin = joinpath(work_dir, "bin")
     grm = joinpath(work_dir, "data/genotypes/grm")
     isdir(grm) || mkdir(grm)
     empty_dir(tmp)
-    
-    item("Convert country.bed to raw data")
-    for country in ["dutch", "german", "norge"]
-        plink_012(joinpath(fra, country), joinpath(tmp, country))
+
+    countries = ["dutch", "german", "norge"]
+    item("Merge 3 conntry beds into one")
+    open(joinpath(tmp, "beds.lst"), "w") do lst
+        for country in countries
+            write(lst, joinpath(fra, country), '\n')
+        end
     end
-    
-    item("Merge raw data for `calc_grm`")
-    cd(tmp)
-    _ = run(pipeline(`$bin/merge4grm dutch.raw german.raw norge.raw`,
-                     "genotypes.txt"))
-    
-    item("Create a parameter file for `calc_grm`")
-    open("calc_grm.inp", "w") do io
-        nlc = 0
-        open(joinpath(tmp, "genotypes.txt"), "r") do gt
-            line = readline(gt)
-            nlc = length(split(line)) - 1
-        end                     # it's 44037 anyway
-        write(io, "$nlc\n")
-        write(io, "genotypes.txt\n")
-        write(io, "genotypes\n")
-        write(io, "3 country.idx\n")
-        write(io, "vanraden\n")
-        write(io, "giv 0.00\n")
-        write(io, "G ASReml\n")
-        write(io, "print_giv=asc\n")
-        write(io, "print_geno=no genotypes.dat\n")
-        write(io, "12\n")       # number of threads
-    end
-    _ = run(`calc_grm`)
-    _ = read(run(pipeline("G.grm", `gawk '{if($1==$2) print $3}'`, "diag.txt")), String)
+    merge_beds(joinpath(tmp, "beds.lst"), joinpath(tmp, "one"))
+    done()
 
     cd(tmp)
-    isdir("$grm/all") || mkdir("$grm/all")
-    for file in ["breed_profiles.txt",
-                 "calc_grm.inp",
-                 "calculated_all_freq.dat",
-                 "calculated_all_freq_per_br_profile.dat",
-                 "country.idx",
-                 "diag.txt",
-                 "G_asreml.giv",
-                 "genomic_inbr_coef.dat",
-                 "genotypes.txt",
-                 "G.grm",
-                 "high_grm_coefs.log",
-                 "ID.dic",
-                 "ID_vs_row_number_G.txt",
-                 "present_breed_not_gen.dat",
-                 "WARNING_ERROR_calc_grm.log"]
-        mv(file, "$grm/all/$file", force=true)
+    item("Prepare pedigree")
+    pds = [joinpath(ped, "dutch.ped"),
+           joinpath(ped, "german.ped")]
+    _ = run(pipeline(`cat $pds`, `$rdBin/pedsort UUUUUUUUUUUUUUUUUUU`, "two.ped"))
+    _ = run(pipeline(joinpath(ped, "norge.ped"), `$rdBin/pedsort 0`, "third.ped"))
+    peds = [joinpath(tmp, "two.ped"),
+            joinpath(tmp, "third.ped")]
+    _ = run(pipeline(`$rdBin/merge-ped $peds`, joinpath(tmp, "all.ped")))
+    done()
+
+    item("ID country index")
+    idic = Dict()
+    for line in eachline(joinpath(tmp, "all.ped"))
+        id, name = [split(line)[i] for i in [1, 4]]
+        push!(idic, name => id)
     end
+    
+    icntry = 0
+    cdic = Dict()
+    for country in countries
+        icntry += 1
+        for line in eachline(joinpath(fra, "$country.fam"))
+            name = split(line)[2]
+            push!(cdic, name=>icntry)
+        end
+    end
+
+    mv("one.fam", "tmp.fam", force=true)
+    cindx = open("country.idx", "w")
+    ifam  = open("one.fam", "w")
+    for line in eachline("tmp.fam")
+        t = split(line)
+        name = t[2]
+        t[2] = idic[name]
+        write(ifam, join(t, ' '), '\n')
+        tvec = [0, 0, 0]
+        tvec[cdic[name]] = 1
+        write(cindx, idic[name], ' ', join(tvec, ' '), '\n')
+    end
+    close(cindx)
+    close(ifam)
+    done()
+
+    item("Convert bed to 012 genotypes.txt")
+    plink_012("one", "tmp")
+    
+    pars = ["one.ped", "one.raw"]
+    _ = run(pipeline("tmp.raw", `$rdBin/raw2gt`, "genotypes.txt"))
+    done()
+    
+    item("Create a parameter file for `calc_grm`")
+    nlc = 0
+    for line in eachline("one.bim")
+        nlc+=1
+    end
+    
+    inp = ["$nlc",      "genotypes.txt",
+           "genotypes", "3 country.idx",
+           "vanraden",  "giv 0.00",
+           "G ASReml",  "print_giv=asc",
+           "print_geno=no genotypes.dat",
+           "12", ""]
+    write("calc_grm.inp", join(inp, '\n'))
+    done()
+
+    _ = run(`calc_grm`)
+    _ = read(run(pipeline("G.grm", `gawk '{if($1==$2) print $3}'`, "diag.txt")), String)
     cd(work_dir)
 end
 

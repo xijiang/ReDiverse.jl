@@ -16,7 +16,10 @@ int main(int argc, char *argv[])
       stringstream ss(line);
       ss>>id>>pa>>ma;
       getline(ss, info);
-      cout << id+tid << ' '<< pa+tid <<' '<< ma+tid << info << '\n';
+      id += tid;
+      if(pa) pa+=tid;
+      if(ma) ma+=tid;
+      cout << id << ' '<< pa <<' '<< ma << info << '\n';
     }
     tid += nid;
   }

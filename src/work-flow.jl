@@ -22,8 +22,11 @@ function sandbox_ReDiverse(test::Bool = true)
 
     if test
         message("Testing ...")
-        @time generate_ID_dict()
+        @time calc_grm()
     else
+        ##################################################
+        ## Data clean, QC of genotypes
+        ##################################################
         title("Organize genotypes")
         message("Release version")
         warning("Warning: This will overwrite all previous results!!!")
@@ -47,16 +50,22 @@ function sandbox_ReDiverse(test::Bool = true)
         @time filter_id(list, 0.05)
         # @time find_duplicates() # only need to run once
         @time remove_duplicates(list)
+        # QC finishes here, results are in step-5.plk
 
         # -------------------------------------------------
         message("Merge for imputation section, <1 min")
         @time merge_by_country("dutch", dutch)
         @time merge_by_country("german", german)
         @time merge_by_country("norge", norge)
+        @time update_german_id() # to interbull names
+        @time merge_dg()         # merge dutch and german data as they are very connected
         message("Imputation, ca 1hr")
-        @time imputation_with_beagle(countries) # ca 20min (D+G) + 37min (N)
+        @time imputation_with_beagle() # ca 4455s
         @time rm_country_specific_snp()
 
+        ##################################################
+        ## Calculation of GRM, further QC
+        ##################################################
         title("GRM related")
         @time calc_grm()
     end

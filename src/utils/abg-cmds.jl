@@ -15,6 +15,7 @@ plink_filter_snp  = ABG.plink_filter_snp
 vcf_2_plink       = ABG.vcf_2_plink
 plink_keep_id     = ABG.plink_keep_id
 plink_012         = ABG.plink_012
+force_reference_allele = ABG.force_reference_allele
 
 # styled printing
 title    = ABG.title

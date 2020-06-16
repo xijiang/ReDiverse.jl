@@ -169,55 +169,80 @@ function filter_id(list, mind::Float64 = 0.05)
 end
 
 """
-    find_duplicates()
----
-Find duplicated SNP in V3 autosomes.
-"""
-function find_duplicates()
-    cd(work_dir)
-    empty_dir("tmp")
-
-    title("Find duplicated autosomal SNP")
-    file = "data/maps/updated/v3.map"
-    open("tmp/auto.map", "w") do io
-        for line in read(pipeline(`gawk '{if($2>0 && $2<30) print $0}' $file`,
-                                  `sort -nk2 -nk3`), String)
-            write(io, line)
-        end
-    end
-    open("data/maps/dup.snp", "w") do io
-        for line in read(pipeline(`cat tmp/auto.map`,
-                                  `bin/find-dup`), String)
-            write(io, line)
-        end
-    end
-end
-
-"""
     remove_duplicates(list)
 ---
 Remove duplicates SNP, i.e., different names, same chromosome and bp, according
 to `data/maps/duplicated.snp`.
 - Merge genotypes with the non-missing values.
 - Use SNP names in the 2nd column
+
+# Note
+ID `XXXYYYF100000007336`, which was labeled so, was removed at this stage.  According to my judgement,
+its DNA was sampled from `XXXYYYF100000006921`.
 """
 function remove_duplicates(list)
     cd(work_dir)
-    empty_dir("tmp")
-    sdir = "data/genotypes/step-4.plk"
-    tdir = "data/genotypes/step-5.plk"
+    sdir = joinpath(work_dir, "data/genotypes/step-4.plk")
+    tdir = joinpath(work_dir, "data/genotypes/step-5.plk")
+    empty_dir(tdir)
+    excl = joinpath(work_dir, "data/maps/excl.snp")
+    aref = joinpath(work_dir, "data/maps/ref.allele")
     isdir(tdir) || mkdir(tdir)
     
     title("Remove duplicated SNP")
     for pf in list
-        item("Dealing with platform $pf")
-        plink_2_vcf("$sdir/$pf", "tmp/plink")
-        open("tmp/filtered.vcf", "w") do io
-            for line in read(pipeline(`cat tmp/plink.vcf`, `bin/merge-dup data/maps/dup.snp`))
-                write(io, line)
-            end
-        end
-        vcf_2_plink("tmp/filtered.vcf", "$tdir/$pf")
+        item("Platform $pf")
+        _ = read(`plink --cow
+                        --bfile $sdir/$pf
+                        --exclude $excl
+                        --reference-allele $aref
+                        --make-bed
+                        --out $tdir/$pf`,
+                 String)
         done()
     end
+    cd(tdir)
+    _ = read(`plink
+		--cow
+		--bfile dutch-d1
+		--remove ../../pedigree/dd1-excl.id
+		--make-bed
+		--out tmp`,
+             String)
+    for ext in ["bed", "bim", "fam"]
+        mv("tmp.$ext", "dutch-d1.$ext", force=true)
+    end
 end
+
+#=
+"""
+    unify_ref_allele(list)
+---
+With the list of `bim` files given, unify `bed`s with the reference alleles appeared last.
+The benefit of this is the homozygote genotypes won't flip later for `G` matrix calculation.
+"""
+function unify_ref_allele(list)
+    title("Unify reference allele across platforms")
+    fra = joinpath(work_dir, "data/genotypes/step-5.plk")
+    til = joinpath(work_dir, "data/genotypes/uniref.plk")
+    isdir(til) || mkdir(til)
+    empty_dir(til)
+    ref = Dict()
+    for l in list
+        for line in eachline(joinpath(fra, "$l.bim"))
+            snp, r = [split(line)[i] for i in [2, 5]]
+            push!(ref, snp=>r)
+        end
+    end
+    open(joinpath(til, "ref.allele"), "w") do io
+        for (snp, allele) in ref
+            write(io, "$snp $allele\n")
+        end
+    end
+    for l in list
+        print("$l ")
+        force_reference_allele(joinpath(fra, l), joinpath(til, "ref.allele"), joinpath(til, l))
+    end
+    done()
+end
+=#

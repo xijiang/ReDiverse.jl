@@ -5,7 +5,7 @@ function update_german_id()
         a, b = split(line)
         dic[a] = b
     end
-    til = joinpath(work_dir, "data/genotypes/step-8.plk/german.fam")
+    til = joinpath(work_dir, "data/genotypes/step-6.plk/german.fam")
     fra = joinpath(work_dir, "tmp/tt")
     mv(til, fra, force=true)
     open(til, "w") do io
@@ -23,9 +23,12 @@ Merge the platforms by country.
 """
 function merge_by_country(country::AbstractString, list)
     cd(work_dir)
-    empty_dir("tmp")
+    tmp = joinpath(work_dir, "tmp")
+    empty_dir(tmp)
     fra = "data/genotypes/step-5.plk"
     dto = "data/genotypes/step-6.plk"
+    ref = joinpath(work_dir, "data/maps/ref.allele")
+    lst = joinpath(tmp, "merge.lst")
     isdir(dto) || mkdir(dto)
 
     item("Merge $country data")
@@ -35,8 +38,13 @@ function merge_by_country(country::AbstractString, list)
         end
     end
 
-    merge_beds("tmp/merge.lst", "$dto/$country")
-    update_german_id()
+    _ = read(`plink --cow
+                    --merge-list "tmp/merge.lst"
+                    --reference-allele $ref
+                    --make-bed
+                    --out $dto/$country`,
+             String)
+    #merge_beds("tmp/merge.lst", "$dto/$country")
     done()
 end
 
@@ -47,12 +55,15 @@ end
 2. Impute with `beagle.jar`
 3. Convert back them to `bed`
 """
-function imputation_with_beagle(countries)
-    fra = "data/genotypes/step-6.plk"
-    dto = "data/genotypes/step-7.plk"
+function imputation_with_beagle()
     cd(work_dir)
+    fra = joinpath(work_dir, "data/genotypes/step-6.plk")
+    dto = joinpath(work_dir, "data/genotypes/step-7.plk")
+    tmp = joinpath(work_dir, "tmp")
+    ref = joinpath(work_dir, "data/maps/ref.allele")
     isdir(dto) || mkdir(dto)
-    empty_dir("tmp")
+    empty_dir(tmp)
+    countries = ["dutch", "german", "norge", "two"]
 
     title("Impute with beagle.jar")
     for country in countries
@@ -63,9 +74,42 @@ function imputation_with_beagle(countries)
                         ne=100
                         out=tmp/imp`,
                  String)
-        vcf_2_plink("tmp/imp.vcf.gz", "$dto/$country")
+        _ = read(`plink --cow
+			--vcf $tmp/imp.vcf.gz
+                        --reference-allele $ref
+			--const-fid
+                        --make-bed
+			--out $dto/$country`,
+                 String)
         done()
     end
+end
+
+"""
+    merge_dg()
+---
+Merge Dutch and German data together for imputation, as they are connected.
+"""
+function merge_dg()
+    cd(work_dir)
+    fra = joinpath(work_dir, "data/genotypes/step-6.plk")
+    tmp = joinpath(work_dir, "tmp")
+    ref = joinpath(work_dir, "data/maps/ref.allele")
+    empty_dir(tmp)
+
+    title("Merge dutch and german data")
+    lst = joinpath(tmp, "list")
+    write(lst,
+          joinpath(fra, "dutch"), '\n',
+          joinpath(fra, "german"), '\n')
+    out = joinpath(fra, "two")
+    _ = read(`plink --cow
+                    --merge-list $lst
+                    --reference-allele $ref
+                    --make-bed
+                    --out $out`,
+             String)
+    done()
 end
 
 """
@@ -78,6 +122,7 @@ function rm_country_specific_snp()
     tmp = joinpath(work_dir, "tmp")
     fra = joinpath(work_dir, "data/genotypes/step-7.plk")
     til = joinpath(work_dir, "data/genotypes/step-8.plk")
+    ref = joinpath(work_dir, "data/maps/ref.allele")
     isdir(til) || mkdir(til)
     lst = joinpath(tmp, "snp.list")
     empty_dir(tmp)
@@ -102,10 +147,19 @@ function rm_country_specific_snp()
             write(io, snp, '\n')
         end
     end
-    for country in ["dutch", "german", "norge"]
-        bed_snp_subset(joinpath(fra, country),
-                       lst,
-                       joinpath(til, country)
-                       )
+    for country in ["dutch", "german", "norge", "two"]
+        # bed_snp_subset(joinpath(fra, country),
+        #                lst,
+        #                joinpath(til, country)
+        #                )
+        src = joinpath(fra, country)
+        out = joinpath(til, country)
+        _ = read(`plink --cow
+                        --bfile $src
+                        --extract $lst
+                        --reference-allele $ref
+                        --make-bed
+                        --out $out`,
+                 String)
     end
 end

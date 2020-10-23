@@ -19,8 +19,9 @@ A package to organize and analysis ReDiverse data. Below are the `ToDo`s
 
 """
 module ReDiverse
-using Test, Printf, DataFrames, CSV
-using Statistics, LinearAlgebra
+using Test
+# , Printf, DataFrames, CSV
+# using Statistics, LinearAlgebra
 ################################################################################
 
 export sandbox_ReDiverse
@@ -34,24 +35,25 @@ end
 rdBin = joinpath(rdDir, "bin")
 rdCpp = joinpath(rdDir, "src/cpp")
 
-beagle = "bin/beagle.jar"
+beagle = joinpath(rdBin, "beagle.jar")
+plink = joinpath(rdBin, "plink")
 
-include("work-flow.jl")
+#include("work-flow.jl")
+#
+## raw genotype orgnization
+#include("genotype/prepare-maps.jl")
+#include("genotype/raw-genotype-org.jl")
+#include("genotype/norsk-genotypes.jl")
+#include("genotype/quality-control.jl")
+#include("genotype/imputation.jl")
+#
+## about the genomic relationship matrix
+#include("grm/calc-grm.jl")
+#include("grm/check-grm.jl")
+#
+## some utilities
+#include("utils/makefile.jl")
+#include("utils/commonFunc.jl")
 
-# raw genotype orgnization
-include("genotype/prepare-maps.jl")
-include("genotype/raw-genotype-org.jl")
-include("genotype/norsk-genotypes.jl")
-include("genotype/quality-control.jl")
-include("genotype/imputation.jl")
-
-# about the genomic relationship matrix
-include("grm/calc-grm.jl")
-include("grm/check-grm.jl")
-
-# some utilities
-include("utils/abg-cmds.jl")
-include("utils/makefile.jl")
-include("utils/commonFunc.jl")
-
+#include("utils/abg-cmds.jl")
 end # module
